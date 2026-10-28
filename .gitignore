@@ -1,0 +1,6 @@
+.env
+cache/
+__pycache__/
+# private plugins and site-specific files: never committed (see README "Plugins")
+private/
+db.cnf
