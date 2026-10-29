@@ -21,7 +21,7 @@ ENV MEDIA_DB_CNF=/run/secrets/db.cnf MEDIA_CACHE=/cache MEDIA_UI_DIR=/app/ui/dis
     MEDIA_HOST=0.0.0.0 MEDIA_PORT=8093 FORWARDED_ALLOW_IPS=127.0.0.1
 WORKDIR /app/api
 # --proxy-headers: behind a reverse proxy (TLS ending there), X-Forwarded-Proto/For from FORWARDED_ALLOW_IPS are honored
-CMD ["sh", "-c", "exec uvicorn app:app --host \"$MEDIA_HOST\" --port \"$MEDIA_PORT\" --proxy-headers --forwarded-allow-ips \"$FORWARDED_ALLOW_IPS\" --no-access-log"]
+CMD ["sh", "-c", "exec uvicorn app.main:app --host \"$MEDIA_HOST\" --port \"$MEDIA_PORT\" --proxy-headers --forwarded-allow-ips \"$FORWARDED_ALLOW_IPS\" --no-access-log"]
 # probe the address the app listens on: MEDIA_HOST may be a LAN address only; 0.0.0.0 (any) is probed as 127.0.0.1
 HEALTHCHECK --interval=60s --timeout=10s --start-period=20s \
   CMD python -c "import os,urllib.request;h=os.environ['MEDIA_HOST'];h='127.0.0.1' if h in ('0.0.0.0','') else h;urllib.request.urlopen(f'http://{h}:{os.environ[\"MEDIA_PORT\"]}/api/health',timeout=8)"
