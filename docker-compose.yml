@@ -11,7 +11,14 @@ services:
     # host networking: the app binds MEDIA_HOST:MEDIA_PORT directly and reaches MySQL at DB_HOST like any LAN client
     network_mode: host
     user: "${MEDIA_UID:-1000}:${MEDIA_GID:-1000}"
+    # every .env setting also reaches the container, so plugins can read their own (the list below sets the defaults)
+    env_file:
+      - path: .env
+        required: false
     environment:
+      # paths inside the container (the .env values of the same names are host paths, used for the mounts below)
+      MEDIA_DB_CNF: /run/secrets/db.cnf
+      MEDIA_CACHE: /cache
       MEDIA_HOST: ${MEDIA_HOST:-0.0.0.0}
       MEDIA_PORT: ${MEDIA_PORT:-8093}
       MEDIA_REVIEWER: ${MEDIA_REVIEWER:-owner}
