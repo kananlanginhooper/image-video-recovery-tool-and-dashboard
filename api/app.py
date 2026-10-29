@@ -11,6 +11,7 @@ with this module. A plugin can add routes, a per-item status (STATUS), list cont
 (NEIGHBORS) and lines in the item details (ITEM_EXTRAS).
 """
 import glob
+import html
 import importlib.util
 import json
 import os
@@ -26,7 +27,7 @@ from datetime import datetime
 import pymysql
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.concurrency import run_in_threadpool
-from fastapi.responses import FileResponse, Response, StreamingResponse
+from fastapi.responses import FileResponse, HTMLResponse, Response, StreamingResponse
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 # Database: DB_HOST/DB_PORT/DB_USER/DB_PASSWORD/DB_NAME; without DB_USER, a MySQL client config file (MEDIA_DB_CNF)
@@ -41,6 +42,15 @@ UI_DIR = os.path.abspath(os.environ.get("MEDIA_UI_DIR", os.path.join(HERE, "..",
 PLUGIN_DIR = os.environ.get("MEDIA_PLUGIN_DIR", os.path.join(HERE, "private"))
 # value written to decided_by when you answer a review question
 REVIEWER = os.environ.get("MEDIA_REVIEWER", "owner")
+# Where the app lives and who may frame it: config only, so it runs unchanged on http://<ip>:<port> or https://<app>.<domain>.
+# UI_BASE_PATH: path prefix the app is served under ("/" by default); index.html gets it as <base href> at request time,
+# and requests under it are routed as if at the root, so one build works under any path.
+_base = os.environ.get("UI_BASE_PATH", "/").strip("/")
+UI_BASE = f"/{_base}/" if _base else "/"
+PUBLIC_URL = os.environ.get("PUBLIC_URL", "")                    # e.g. https://media.example.com; empty = wherever it's opened
+FRAME_ANCESTORS = os.environ.get("FRAME_ANCESTORS", "").split()  # origins allowed to show it in an iframe (the wrapper)
+OIDC = {"enabled": os.environ.get("LOGIN", "off") == "on", "issuer": os.environ.get("OIDC_ISSUER", ""),
+        "client_id": os.environ.get("OIDC_CLIENT_ID", "")}       # login isn't built yet; the switch is here for the UI
 PAGE = 120
 CLASSES = ["camera", "screenshot", "screenshot_probable", "unknown", "unclassified", "asset"]
 BROWSER_IMAGE = {"jpeg", "png", "gif", "webp"}
@@ -286,9 +296,35 @@ def upstream_media(path, rng):
 
 
 @app.middleware("http")
+async def frame_policy(request: Request, call_next):
+    """Only this app and the configured wrapper origins may show it in an iframe."""
+    r = await call_next(request)
+    r.headers["Content-Security-Policy"] = "frame-ancestors " + " ".join(["'self'", *FRAME_ANCESTORS])
+    return r
+
+
+@app.get("/api/config")
+def runtime_config():
+    """The UI's runtime config, loaded before it starts: nothing about hosts, ports or paths is compiled into it."""
+    return {"apiBase": UI_BASE + "api/", "basePath": UI_BASE, "publicUrl": PUBLIC_URL, "frameParents": FRAME_ANCESTORS,
+            "login": {"enabled": OIDC["enabled"], "issuer": OIDC["issuer"], "clientId": OIDC["client_id"]}}
+
+
+@app.middleware("http")
 async def media_from_upstream(request: Request, call_next):
     if FILES_UPSTREAM and MEDIA_ROUTE.match(request.url.path):
         return await run_in_threadpool(upstream_media, request.url.path, request.headers.get("range"))
+    return await call_next(request)
+
+
+@app.middleware("http")
+async def strip_base_path(request: Request, call_next):
+    """Under UI_BASE_PATH (e.g. /media/), route /media/api/... and /media/main-x.js as /api/... and /main-x.js.
+    Registered last, so it runs first."""
+    if UI_BASE != "/" and (request.url.path + "/").startswith(UI_BASE):
+        rest = request.url.path[len(UI_BASE) - 1:] or "/"
+        request.scope["path"] = rest
+        request.scope["raw_path"] = rest.encode()
     return await call_next(request)
 
 
@@ -399,4 +435,6 @@ def ui(path: str):
     index = os.path.join(UI_DIR, "index.html")
     if not os.path.isfile(index):
         raise HTTPException(503, "UI not built (ui/dist/media/browser)")
-    return FileResponse(index, headers={"Cache-Control": "no-store"})
+    with open(index, encoding="utf-8") as fh:
+        page = fh.read().replace('<base href="/">', f'<base href="{html.escape(UI_BASE)}">', 1)
+    return HTMLResponse(page, headers={"Cache-Control": "no-store"})
