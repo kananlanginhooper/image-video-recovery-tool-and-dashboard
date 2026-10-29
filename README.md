@@ -7,6 +7,12 @@ A LAN web app for a large recovered photo and video library: browse every image 
 | `api/` | FastAPI app (`app.py`): JSON API under `/api/`, thumbnails / viewer images / video frames made on demand with vips and ffmpeg, and it serves the built UI. |
 | `ui/` | Angular 20 app (zoneless, signals): Browse, Folders, Review subtypes, Counts, and an item viewer with prefetch, keyboard and swipe stepping. |
 
+## Demo
+
+**https://kananlanginhooper.github.io/image-video-recovery-tool-and-dashboard/** runs the real UI on a generated sample library (3,000 drawn "photos", videos, screenshots and assets) entirely in your browser, with no back end. Subtype answers you give there are kept in your browser only.
+
+It's the `demo` build: `ui/src/app/data-mode.ts` is swapped for `data-mode.demo.ts`, which answers the `/api/` calls from `ui/src/app/demo/`. Rebuild it into `docs/` with `cd ui && npm run build:demo` (GitHub Pages serves `docs/` on `main`).
+
 ## Run it (Docker)
 
 ```bash
