@@ -1,0 +1,7 @@
+# Add on a server whose containers share one external Docker network (create it once:
+# `docker network create --subnet <cidr> homelab`), e.g. COMPOSE_FILE=docker-compose.yml:compose.files.yml:compose.homelab.yml.
+# The port is still published on MEDIA_HOST:MEDIA_PORT; the network only lets other containers reach this one by name.
+networks:
+  default:
+    name: homelab
+    external: true

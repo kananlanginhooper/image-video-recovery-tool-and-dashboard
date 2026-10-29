@@ -8,8 +8,12 @@ services:
         UI_CONFIG: ${UI_CONFIG:-production}
     image: media-library
     restart: unless-stopped
-    # host networking: the app binds MEDIA_HOST:MEDIA_PORT directly and reaches MySQL at DB_HOST like any LAN client
-    network_mode: host
+    # published on MEDIA_HOST:MEDIA_PORT of this machine; inside, the app always listens on 0.0.0.0:8093.
+    # MySQL is reached at DB_HOST like any LAN client (host.docker.internal = this machine)
+    ports:
+      - "${MEDIA_HOST:-0.0.0.0}:${MEDIA_PORT:-8093}:8093"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     user: "${MEDIA_UID:-1000}:${MEDIA_GID:-1000}"
     # every .env setting also reaches the container, so plugins can read their own (the list below sets the defaults)
     env_file:
@@ -19,8 +23,8 @@ services:
       # paths inside the container (the .env values of the same names are host paths, used for the mounts below)
       MEDIA_DB_CNF: /run/secrets/db.cnf
       MEDIA_CACHE: /cache
-      MEDIA_HOST: ${MEDIA_HOST:-0.0.0.0}
-      MEDIA_PORT: ${MEDIA_PORT:-8093}
+      MEDIA_HOST: 0.0.0.0
+      MEDIA_PORT: 8093
       MEDIA_REVIEWER: ${MEDIA_REVIEWER:-owner}
       MEDIA_FILES_UPSTREAM: ${MEDIA_FILES_UPSTREAM:-}
       DB_HOST: ${DB_HOST:-127.0.0.1}
@@ -40,7 +44,8 @@ services:
     profiles: [refresh]
     image: media-library
     restart: unless-stopped
-    network_mode: host
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     user: "${MEDIA_UID:-1000}:${MEDIA_GID:-1000}"
     command: ["python", "refresh.py"]
     volumes:

@@ -22,7 +22,7 @@ docker compose up -d --build
 
 - **Address:** the app comes up on `http://<host>:8093/`.
 - **Restarts:** the services are `restart: unless-stopped`, so they start again with Docker after a reboot.
-- **Networking:** `network_mode: host` (on Docker Desktop, add `compose.bridge.yml` to publish the port instead). The app never runs a database: it connects to the MySQL at `DB_HOST`, the same one from the laptop and the server.
+- **Networking:** the port is published on `MEDIA_HOST:MEDIA_PORT` (the same on Linux and Docker Desktop). On a server whose containers share an external Docker network, add `compose.homelab.yml`. The app never runs a database: it connects to the MySQL at `DB_HOST`, the same one from the laptop and the server (`host.docker.internal` is the machine itself).
 - **Media files:** on the machine that has them, add `compose.files.yml` (`COMPOSE_FILE=docker-compose.yml:compose.files.yml` in `.env`). The catalogue stores the host's absolute paths, so it mounts the host's `/` read-only at `/host` with `rslave` propagation. Network shares that mount later appear inside, and the app still starts while one is down; its files show as "missing".
 - **Elsewhere (e.g. a laptop):** set `MEDIA_FILES_UPSTREAM` to an instance that has the files. Thumbnails, images, originals and frames are then streamed from it, Range included, while lists, details and answers stay local.
 - **Access:** there is no login. Keep it on your LAN (set `MEDIA_HOST` to a LAN address).
