@@ -40,3 +40,4 @@ Same behavior and data, new structure and libraries (DASHBOARD-TEMPLATE "Shared 
 3. **Keyboard access:** thumbnails, the blurred viewer image and Pro Production frames are focusable and open or reveal with Enter (and Space). Before, they were mouse-only.
 4. **Pager:** Material's paginator shows "1 – 120 of 3000" with first/previous/next/last, where it used to show "page 1 of 25 · 3,000 items" with previous/next links.
 5. **Demo build:** it no longer wipes `docs/refactor/` when it rebuilds `docs/`.
+6. **Stricter request checks (422):** `GET /api/browse` answers 422 for a `grp` other than image, video or all, a `sort` other than new or old, or a `page` below 1 (before, those were quietly replaced with the default). `POST /api/subtype/{hash}/{subtype}` answers 422 for a verdict other than match or no, where it used to answer 400; an unknown subtype or a malformed hash is still 400.

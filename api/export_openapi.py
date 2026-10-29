@@ -1,5 +1,6 @@
 """Write api/openapi.json for the UI's generated types (ui: npm run gen:api). Public app only: no plugins are loaded,
 so a private plugin's routes never reach a committed file."""
+
 import json
 import os
 import sys

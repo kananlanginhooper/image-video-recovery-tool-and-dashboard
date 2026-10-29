@@ -32,8 +32,17 @@ def engine(database: str | None = None) -> Engine:
         else:
             url = URL.create("mysql+pymysql", database=name)
             args = {"charset": "utf8mb4", "read_default_file": os.path.expanduser(settings.media_db_cnf)}
-        # one list page loads ~120 images at once, so up to 40 connections stay open; pre_ping reconnects after a database restart
-        _engines[key] = create_engine(url, connect_args=args, pool_size=10, max_overflow=30, pool_pre_ping=True, pool_recycle=3600)
+        # A list page asks for ~120 images together; requests wait for a free connection. Defaults: 5 open + 15 extra per
+        # database, so two instances and the plugin's second database stay under MySQL's default max_connections (151).
+        # pre_ping reconnects after a database restart
+        _engines[key] = create_engine(
+            url,
+            connect_args=args,
+            pool_size=settings.db_pool_size,
+            max_overflow=settings.db_max_overflow,
+            pool_pre_ping=True,
+            pool_recycle=3600,
+        )
     return _engines[key]
 
 
