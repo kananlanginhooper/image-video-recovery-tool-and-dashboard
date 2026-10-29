@@ -48,7 +48,8 @@ REVIEWER = os.environ.get("MEDIA_REVIEWER", "owner")
 _base = os.environ.get("UI_BASE_PATH", "/").strip("/")
 UI_BASE = f"/{_base}/" if _base else "/"
 PUBLIC_URL = os.environ.get("PUBLIC_URL", "")                    # e.g. https://media.example.com; empty = wherever it's opened
-FRAME_ANCESTORS = os.environ.get("FRAME_ANCESTORS", "").split()  # origins allowed to show it in an iframe (the wrapper)
+# origins allowed to show it in an iframe: the Home dashboards wrapper(s). Default: the laptop wrapper; .env adds the rest.
+FRAME_ANCESTORS = os.environ.get("FRAME_ANCESTORS", "http://localhost:4310").split()
 OIDC = {"enabled": os.environ.get("LOGIN", "off") == "on", "issuer": os.environ.get("OIDC_ISSUER", ""),
         "client_id": os.environ.get("OIDC_CLIENT_ID", "")}       # login isn't built yet; the switch is here for the UI
 PAGE = 120
