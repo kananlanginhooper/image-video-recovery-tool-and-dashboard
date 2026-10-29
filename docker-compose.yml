@@ -1,5 +1,5 @@
 # Media library on its own: `docker compose up -d --build`. Both services restart with Docker, so nothing needs a manual start.
-# Settings come from .env (see .env.example). It reads an existing catalogue in MySQL on the host; it doesn't run MySQL.
+# Settings come from .env (see .env.example). It reads an existing catalogue in MySQL; it never runs a database itself.
 services:
   media:
     build:
@@ -8,37 +8,41 @@ services:
         UI_CONFIG: ${UI_CONFIG:-production}
     image: media-library
     restart: unless-stopped
-    # host networking: MySQL is reached as the DB config says (e.g. 127.0.0.1), and the app binds MEDIA_HOST:MEDIA_PORT directly
+    # host networking: the app binds MEDIA_HOST:MEDIA_PORT directly and reaches MySQL at DB_HOST like any LAN client
     network_mode: host
     user: "${MEDIA_UID:-1000}:${MEDIA_GID:-1000}"
     environment:
       MEDIA_HOST: ${MEDIA_HOST:-0.0.0.0}
       MEDIA_PORT: ${MEDIA_PORT:-8093}
       MEDIA_REVIEWER: ${MEDIA_REVIEWER:-owner}
-      MEDIA_FILES_ROOT: /host
+      MEDIA_FILES_UPSTREAM: ${MEDIA_FILES_UPSTREAM:-}
+      DB_HOST: ${DB_HOST:-127.0.0.1}
+      DB_PORT: ${DB_PORT:-3306}
+      DB_USER: ${DB_USER:-}
+      DB_PASSWORD: ${DB_PASSWORD:-}
+      DB_NAME: ${DB_NAME:-}
     volumes:
+      # only used when DB_USER is empty: a MySQL client config file instead of the DB_* settings
       - ${MEDIA_DB_CNF:-./db.cnf}:/run/secrets/db.cnf:ro
       - ${MEDIA_CACHE_DIR:-./cache}:/cache
-      # The catalogue stores the host's absolute paths, so the host's / is visible read-only at /host.
-      # rslave: network shares mounted later (automounts) appear here too, and the container starts even while one is down
-      # (its files just show "missing").
-      - type: bind
-        source: /
-        target: /host
-        read_only: true
-        bind:
-          propagation: rslave
 
-  # Rebuilds the media_browse index every REFRESH_EVERY seconds with REFRESH_SQL (your own catalogue's query).
+  # Rebuilds the media_browse index every REFRESH_EVERY seconds with REFRESH_SQL (your own catalogue's query),
+  # from the app's own image (api/refresh.py) with the same database settings.
   # Off by default; turn it on with `docker compose --profile refresh up -d` if nothing else rebuilds the index.
   refresh:
     profiles: [refresh]
-    image: mysql:8.4
+    image: media-library
     restart: unless-stopped
     network_mode: host
+    user: "${MEDIA_UID:-1000}:${MEDIA_GID:-1000}"
+    command: ["python", "refresh.py"]
     volumes:
       - ${MEDIA_DB_CNF:-./db.cnf}:/run/secrets/db.cnf:ro
       - ${REFRESH_SQL:-./api/private/media_browse_refresh.sql}:/refresh.sql:ro
-    entrypoint: ["sh", "-c", "while :; do mysql --defaults-file=/run/secrets/db.cnf < /refresh.sql && echo \"refreshed $$(date -Is)\"; sleep $${REFRESH_EVERY:-1800}; done"]
     environment:
       REFRESH_EVERY: ${REFRESH_EVERY:-1800}
+      DB_HOST: ${DB_HOST:-127.0.0.1}
+      DB_PORT: ${DB_PORT:-3306}
+      DB_USER: ${DB_USER:-}
+      DB_PASSWORD: ${DB_PASSWORD:-}
+      DB_NAME: ${DB_NAME:-}
