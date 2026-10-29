@@ -20,6 +20,9 @@ class Settings(BaseSettings):
     db_password: str = ""
     db_name: str = ""
     media_db_cnf: str = "~/.my.cnf"
+    # connections per database: DB_POOL_SIZE kept open, up to DB_MAX_OVERFLOW more under load (MySQL max_connections is shared)
+    db_pool_size: int = 5
+    db_max_overflow: int = 15
 
     # Files: the cache for generated images, where the host's / is visible (Docker: /host), or an instance to stream from
     media_cache: str = str(REPO_DIR / "cache")
