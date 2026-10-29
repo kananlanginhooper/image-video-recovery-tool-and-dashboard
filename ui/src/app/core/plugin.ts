@@ -1,5 +1,5 @@
 import { Injector, Type } from '@angular/core';
-import { Extra, Item } from './types';
+import { Extra, Item } from './models';
 
 /**
  * A UI plugin, paired with an API plugin (see app.py). The app ships with none (plugins.ts); a build with the

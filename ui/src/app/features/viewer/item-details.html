@@ -1,0 +1,27 @@
+@let r = item();
+<table class="meta">
+  <tr><td>taken</td><td>{{ taken(r.taken) || '—' }} <span class="muted">({{ r.taken_source }})</span></td></tr>
+  <tr><td>class</td><td>{{ r.class }}</td></tr>
+  <tr><td>kind</td><td>{{ r.kind }}</td></tr>
+  <tr><td>size</td><td>{{ sizeH(r.size) }}{{ r.width ? ' · ' + r.width + '×' + r.height : '' }}{{ r.duration ? ' · ' + r.duration.toFixed(0) + ' s' : '' }}</td></tr>
+  @for (x of r.extras; track $index) {
+    <tr><td>{{ x.label }}</td><td>
+      @if (isLink(x)) { <a href="" (click)="$event.preventDefault(); extra.emit(x)">{{ x.text }}</a> } @else { {{ x.text }} }
+    </td></tr>
+  }
+  <tr><td>hash</td><td><code>{{ r.hash }}</code></td></tr>
+  <tr><td>folder</td><td><a href="" (click)="$event.preventDefault(); folder.emit(r.folder)">{{ r.folder }}</a></td></tr>
+  @if (r.derived.length) {
+    <tr><td>linked</td><td>@for (d of r.derived; track $index) { {{ d.derivation }}: {{ d.path }}<br> }</td></tr>
+  }
+</table>
+
+<h3>Copies ({{ r.copies.length }})</h3>
+<table class="meta">
+  @for (c of r.copies; track c.path) { <tr><td>{{ sizeH(c.size) }}</td><td>{{ c.path }}</td></tr> }
+</table>
+
+@if (r.ocr; as o) {
+  <h3>OCR text <span class="muted">(confidence {{ o.conf }})</span></h3>
+  <pre class="ocr">{{ o.text }}</pre>
+}

@@ -4,8 +4,8 @@ A LAN web app for a large recovered photo and video library: browse every image 
 
 | Folder | What |
 |---|---|
-| `api/` | FastAPI app (`app.py`): JSON API under `/api/`, thumbnails / viewer images / video frames made on demand with vips and ffmpeg, and it serves the built UI. |
-| `ui/` | Angular 20 app (zoneless, signals): Browse, Folders, Review subtypes, Counts, and an item viewer with prefetch, keyboard and swipe stepping. |
+| `api/` | FastAPI app (`app/`: `main.py`, `core/` settings + middleware, `db/`, `schemas/`, `services/`, `api/routes/`). JSON API under `/api/`; thumbnails, viewer images and video frames made on demand with vips and ffmpeg; serves the built UI. Tests in `tests/`. |
+| `ui/` | Angular 20 + Angular Material on the shared theme (`src/styles/theme.scss`). `src/app/core/` (config, API service, store, generated API types), `shared/` (small components, format helpers), `features/` (one folder per page). |
 
 ## Demo
 
@@ -62,9 +62,13 @@ Site-specific features live in `private/` folders, which are gitignored:
 ## Develop
 
 ```bash
-cd api && pip install -r requirements.txt && uvicorn app:app --port 8093   # with the DB_* settings in the environment
-cd ui && npm ci && npx ng serve --proxy-config proxy.conf.json   # UI on :4200, /api proxied to :8093
+cd api && pip install -r requirements-dev.txt && uvicorn app.main:app --port 8093   # reads the repo's .env
+cd api && pytest && ruff check . && ruff format --check .
+cd ui && npm ci && npx ng serve --proxy-config proxy.conf.json                      # UI on :4200, /api proxied to :8093
+cd ui && npm run lint
 ```
+
+**API types:** after changing a schema, run `cd api && python export_openapi.py` (public app only, so no plugin routes), then `cd ui && npm run gen:api`.
 
 ## API
 

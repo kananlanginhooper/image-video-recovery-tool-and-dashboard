@@ -1,0 +1,13 @@
+@use '@angular/material' as mat;
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--app-space-2);
+  align-items: center;
+  @include mat.form-field-density(-4);
+}
+
+mat-form-field { width: 170px; }
+mat-form-field.date { width: 160px; }
+mat-form-field.wide { width: 230px; }
