@@ -46,6 +46,10 @@ Nothing about hosts, ports or schemes is compiled in:
 | `derived_file` | e.g. HEIC → JPEG conversions, shown in the viewer and used as the viewer image |
 | `screenshot_subtype` | guesses to review:<br>`hash`, `subtype`, `status` (match/borderline/no), `confidence`, `signals` JSON, `decided_by`, `reviewed_at` |
 
+## The app's own data
+
+The app's own database (`media_library`) is proposed in [design/media-library-db.md](design/media-library-db.md): albums, favorites, tags and captions, keyed by file hash. Nothing is created until the open questions there are answered.
+
 ## Plugins
 
 Site-specific features live in `private/` folders, which are gitignored:
