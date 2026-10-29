@@ -1,0 +1,15 @@
+# Add on the machine that has the media files: COMPOSE_FILE=docker-compose.yml:compose.files.yml in .env.
+# The catalogue stores the host's absolute paths, so the host's / is visible read-only at /host (MEDIA_FILES_ROOT).
+# rslave: network shares mounted later (automounts) appear here too, and the container starts even while one is down
+# (its files just show "missing"). Needs a host whose / is a shared mount (normal Linux, not Docker Desktop).
+services:
+  media:
+    environment:
+      MEDIA_FILES_ROOT: /host
+    volumes:
+      - type: bind
+        source: /
+        target: /host
+        read_only: true
+        bind:
+          propagation: rslave

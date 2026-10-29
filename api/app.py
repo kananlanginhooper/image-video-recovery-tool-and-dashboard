@@ -14,19 +14,26 @@ import glob
 import importlib.util
 import json
 import os
+import re
 import subprocess
 import sys
 import threading
+import urllib.error
 import urllib.parse
+import urllib.request
 from datetime import datetime
 
 import pymysql
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import FileResponse, Response
+from fastapi.concurrency import run_in_threadpool
+from fastapi.responses import FileResponse, Response, StreamingResponse
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+# Database: DB_HOST/DB_PORT/DB_USER/DB_PASSWORD/DB_NAME; without DB_USER, a MySQL client config file (MEDIA_DB_CNF)
+DB_ENV = {"host": os.environ.get("DB_HOST", "127.0.0.1"), "port": int(os.environ.get("DB_PORT") or 3306),
+          "user": os.environ.get("DB_USER"), "password": os.environ.get("DB_PASSWORD", "")}
 CNF = os.path.expanduser(os.environ.get("MEDIA_DB_CNF", "~/.my.cnf"))
-DB_NAME = os.environ.get("MEDIA_DB_NAME") or None   # None: the database named in the config file
+DB_NAME = os.environ.get("DB_NAME") or None   # None: the database named in the config file
 CACHE = os.environ.get("MEDIA_CACHE", os.path.join(HERE, "..", "cache"))
 # where the host's / is visible ("/host" in Docker); empty when the app runs directly on the host
 FILES_ROOT = os.environ.get("MEDIA_FILES_ROOT", "").rstrip("/")
@@ -59,7 +66,8 @@ app = FastAPI()
 
 def db(database=None):
     kw = {"database": database or DB_NAME} if (database or DB_NAME) else {}
-    return pymysql.connect(read_default_file=CNF, charset="utf8mb4", autocommit=True, cursorclass=pymysql.cursors.DictCursor, **kw)
+    kw.update(DB_ENV if DB_ENV["user"] else {"read_default_file": CNF})
+    return pymysql.connect(charset="utf8mb4", autocommit=True, cursorclass=pymysql.cursors.DictCursor, **kw)
 
 
 def q(sql, args=(), database=None):
@@ -253,6 +261,36 @@ async def api_set_subtype(h: str, sub: str, request: Request):
 
 
 # ---- media: thumbnails, viewer images, originals, video frames (generated on demand, cached in CACHE) ----
+
+# A machine without the files (e.g. a laptop) can stream media from an instance that has them: MEDIA_FILES_UPSTREAM is
+# that instance's base URL. Lists, details and answers stay local; only these media routes are passed through (with Range).
+FILES_UPSTREAM = os.environ.get("MEDIA_FILES_UPSTREAM", "").rstrip("/")
+MEDIA_ROUTE = re.compile(r"^/api/(thumb|view|file|frame|pro/frame)/")
+PASS_HEADERS = ("content-type", "content-length", "content-range", "accept-ranges", "cache-control", "content-disposition")
+
+
+def upstream_media(path, rng):
+    req = urllib.request.Request(FILES_UPSTREAM + path, headers={"Range": rng} if rng else {})
+    try:
+        r = urllib.request.urlopen(req, timeout=150)
+    except urllib.error.HTTPError as e:
+        r = e
+    except OSError:
+        return Response("media upstream unreachable", status_code=502)
+    def body():
+        with r:
+            while chunk := r.read(256 * 1024):
+                yield chunk
+    return StreamingResponse(body(), status_code=r.status,
+                             headers={k: v for k, v in r.headers.items() if k.lower() in PASS_HEADERS})
+
+
+@app.middleware("http")
+async def media_from_upstream(request: Request, call_next):
+    if FILES_UPSTREAM and MEDIA_ROUTE.match(request.url.path):
+        return await run_in_threadpool(upstream_media, request.url.path, request.headers.get("range"))
+    return await call_next(request)
+
 
 def cached(h, suffix):
     d = os.path.join(CACHE, h[:2])
