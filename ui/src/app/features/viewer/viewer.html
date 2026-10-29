@@ -1,0 +1,20 @@
+<div class="viewer-wrap" (touchstart)="x0 = $event.touches[0].clientX" (touchend)="swipe($event)">
+  <div class="navbar">
+    <button mat-stroked-button (click)="close()"><mat-icon>close</mat-icon> Close</button>
+    <button mat-stroked-button [disabled]="!it()?.prev" (click)="step('prev')"><mat-icon>chevron_left</mat-icon> Previous</button>
+    <button mat-stroked-button [disabled]="!it()?.next" (click)="step('next')">Next <mat-icon iconPositionEnd>chevron_right</mat-icon></button>
+    <span class="muted">{{ cur()?.ctx ? 'arrow keys or swipe also work · Esc closes' : 'open an item from a list to step through it · Esc closes' }}</span>
+  </div>
+
+  @if (error()) { <p class="warn">{{ error() }}</p> }
+  @if (it(); as r) {
+    <viewer-media [item]="r" />
+    <div class="act">
+      <a mat-button [href]="download(r.hash)" download><mat-icon>download</mat-icon> Download original</a>
+      @for (a of actions; track $index) { <ng-container *ngComponentOutlet="a; inputs: { item: r }" /> }
+    </div>
+    <item-details [item]="r" (folder)="store.browseWith({ folder: $event })" (extra)="extra($event, r)" />
+  } @else if (!error()) {
+    <mat-progress-bar mode="indeterminate" />
+  }
+</div>

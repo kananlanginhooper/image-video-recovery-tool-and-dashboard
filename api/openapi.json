@@ -1,0 +1,1501 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Media library",
+    "description": "Browse a recovered photo and video library and answer the classifier's questions about it.",
+    "version": "1.0"
+  },
+  "paths": {
+    "/api/config": {
+      "get": {
+        "tags": [
+          "config"
+        ],
+        "summary": "Runtime Config",
+        "description": "Loaded by the UI before it starts: nothing about hosts, ports or paths is compiled into it.",
+        "operationId": "runtime_config_api_config_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RuntimeConfig"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/meta": {
+      "get": {
+        "tags": [
+          "catalog"
+        ],
+        "summary": "Meta",
+        "operationId": "meta_api_meta_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Meta"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/browse": {
+      "get": {
+        "tags": [
+          "catalog"
+        ],
+        "summary": "Browse",
+        "description": "120 per page, newest first; `ctx` in the answer is this list, for the viewer's previous/next.",
+        "operationId": "browse_api_browse_get",
+        "parameters": [
+          {
+            "name": "grp",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "image",
+                "video",
+                "all",
+                ""
+              ],
+              "type": "string",
+              "default": "",
+              "title": "Grp"
+            }
+          },
+          {
+            "name": "class",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Class"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Status"
+            }
+          },
+          {
+            "name": "folder",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Folder"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "From"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "To"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "OCR text search (boolean mode)",
+              "default": "",
+              "title": "Q"
+            },
+            "description": "OCR text search (boolean mode)"
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "new",
+                "old",
+                ""
+              ],
+              "type": "string",
+              "default": "",
+              "title": "Sort"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BrowsePage"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/folders": {
+      "get": {
+        "tags": [
+          "catalog"
+        ],
+        "summary": "Folders",
+        "operationId": "folders_api_folders_get",
+        "parameters": [
+          {
+            "name": "prefix",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Prefix"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FolderList"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/item/{h}": {
+      "get": {
+        "tags": [
+          "catalog"
+        ],
+        "summary": "Item",
+        "operationId": "item_api_item__h__get",
+        "parameters": [
+          {
+            "name": "h",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "H"
+            }
+          },
+          {
+            "name": "ctx",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Ctx"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Item"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/stats": {
+      "get": {
+        "tags": [
+          "catalog"
+        ],
+        "summary": "Stats",
+        "operationId": "stats_api_stats_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Stats"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/health": {
+      "get": {
+        "tags": [
+          "catalog"
+        ],
+        "summary": "Health",
+        "operationId": "health_api_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Health"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/subtypes": {
+      "get": {
+        "tags": [
+          "subtypes"
+        ],
+        "summary": "Subtypes",
+        "operationId": "subtypes_api_subtypes_get",
+        "parameters": [
+          {
+            "name": "type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "web_game_asset",
+              "title": "Type"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "match",
+              "title": "Status"
+            }
+          },
+          {
+            "name": "label",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Label"
+            }
+          },
+          {
+            "name": "sample",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Sample"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubtypePage"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/subtype/{h}/{sub}": {
+      "post": {
+        "tags": [
+          "subtypes"
+        ],
+        "summary": "Answer",
+        "operationId": "answer_api_subtype__h___sub__post",
+        "parameters": [
+          {
+            "name": "h",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "H"
+            }
+          },
+          {
+            "name": "sub",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Sub"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubtypeAnswer"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ok"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/thumb/{h}": {
+      "get": {
+        "tags": [
+          "media"
+        ],
+        "summary": "Thumb",
+        "operationId": "thumb_api_thumb__h__get",
+        "parameters": [
+          {
+            "name": "h",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "H"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "the image, or a placeholder drawing",
+            "content": {
+              "image/jpeg": {},
+              "image/svg+xml": {}
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/view/{h}": {
+      "get": {
+        "tags": [
+          "media"
+        ],
+        "summary": "View",
+        "operationId": "view_api_view__h__get",
+        "parameters": [
+          {
+            "name": "h",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "H"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "the image, or a placeholder drawing",
+            "content": {
+              "image/jpeg": {},
+              "image/svg+xml": {}
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/file/{h}": {
+      "get": {
+        "tags": [
+          "media"
+        ],
+        "summary": "Original",
+        "operationId": "original_api_file__h__get",
+        "parameters": [
+          {
+            "name": "h",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "H"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "the original file"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/frame/{h}/{t}": {
+      "get": {
+        "tags": [
+          "media"
+        ],
+        "summary": "Frame",
+        "operationId": "frame_api_frame__h___t__get",
+        "parameters": [
+          {
+            "name": "h",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "H"
+            }
+          },
+          {
+            "name": "t",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "T"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "the image, or a placeholder drawing",
+            "content": {
+              "image/jpeg": {},
+              "image/svg+xml": {}
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "BrowsePage": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/Tile"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "pages": {
+            "type": "integer",
+            "title": "Pages"
+          },
+          "ctx": {
+            "type": "string",
+            "title": "Ctx",
+            "description": "the list, for the viewer's previous/next (pass back as ?ctx=)"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "page",
+          "pages",
+          "ctx"
+        ],
+        "title": "BrowsePage"
+      },
+      "Copy": {
+        "properties": {
+          "path": {
+            "type": "string",
+            "title": "Path"
+          },
+          "size": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Size"
+          }
+        },
+        "type": "object",
+        "required": [
+          "path",
+          "size"
+        ],
+        "title": "Copy"
+      },
+      "Derived": {
+        "properties": {
+          "derivation": {
+            "type": "string",
+            "title": "Derivation"
+          },
+          "path": {
+            "type": "string",
+            "title": "Path"
+          }
+        },
+        "type": "object",
+        "required": [
+          "derivation",
+          "path"
+        ],
+        "title": "Derived"
+      },
+      "Extra": {
+        "properties": {
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "text": {
+            "type": "string",
+            "title": "Text"
+          }
+        },
+        "additionalProperties": true,
+        "type": "object",
+        "required": [
+          "label",
+          "text"
+        ],
+        "title": "Extra",
+        "description": "A plugin's line in the item details; any other keys make it a link handed back to the plugin."
+      },
+      "FolderList": {
+        "properties": {
+          "prefix": {
+            "type": "string",
+            "title": "Prefix"
+          },
+          "here": {
+            "type": "integer",
+            "title": "Here",
+            "description": "items directly in the prefix folder"
+          },
+          "folders": {
+            "items": {
+              "$ref": "#/components/schemas/FolderRow"
+            },
+            "type": "array",
+            "title": "Folders"
+          }
+        },
+        "type": "object",
+        "required": [
+          "prefix",
+          "here",
+          "folders"
+        ],
+        "title": "FolderList"
+      },
+      "FolderRow": {
+        "properties": {
+          "path": {
+            "type": "string",
+            "title": "Path"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "n": {
+            "type": "integer",
+            "title": "N"
+          },
+          "v": {
+            "type": "integer",
+            "title": "V",
+            "description": "videos"
+          }
+        },
+        "type": "object",
+        "required": [
+          "path",
+          "name",
+          "n",
+          "v"
+        ],
+        "title": "FolderRow"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "Health": {
+        "properties": {
+          "ok": {
+            "type": "boolean",
+            "title": "Ok"
+          },
+          "items": {
+            "type": "integer",
+            "title": "Items"
+          },
+          "at": {
+            "type": "string",
+            "title": "At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ok",
+          "items",
+          "at"
+        ],
+        "title": "Health"
+      },
+      "Item": {
+        "properties": {
+          "hash": {
+            "type": "string",
+            "title": "Hash"
+          },
+          "grp": {
+            "type": "string",
+            "title": "Grp"
+          },
+          "kind": {
+            "type": "string",
+            "title": "Kind"
+          },
+          "class": {
+            "type": "string",
+            "title": "Class"
+          },
+          "taken": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Taken"
+          },
+          "taken_source": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Taken Source"
+          },
+          "size": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Size"
+          },
+          "width": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Width"
+          },
+          "height": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Height"
+          },
+          "duration": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration"
+          },
+          "folder": {
+            "type": "string",
+            "title": "Folder"
+          },
+          "st": {
+            "type": "string",
+            "title": "St"
+          },
+          "hidden": {
+            "type": "boolean",
+            "title": "Hidden"
+          },
+          "playable": {
+            "type": "boolean",
+            "title": "Playable"
+          },
+          "prev": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prev"
+          },
+          "next": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next"
+          },
+          "extras": {
+            "items": {
+              "$ref": "#/components/schemas/Extra"
+            },
+            "type": "array",
+            "title": "Extras"
+          },
+          "copies": {
+            "items": {
+              "$ref": "#/components/schemas/Copy"
+            },
+            "type": "array",
+            "title": "Copies"
+          },
+          "derived": {
+            "items": {
+              "$ref": "#/components/schemas/Derived"
+            },
+            "type": "array",
+            "title": "Derived"
+          },
+          "ocr": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Ocr"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "hash",
+          "grp",
+          "kind",
+          "class",
+          "taken",
+          "taken_source",
+          "size",
+          "width",
+          "height",
+          "duration",
+          "folder",
+          "st",
+          "hidden",
+          "playable",
+          "prev",
+          "next",
+          "extras",
+          "copies",
+          "derived",
+          "ocr"
+        ],
+        "title": "Item"
+      },
+      "Login": {
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "title": "Enabled"
+          },
+          "issuer": {
+            "type": "string",
+            "title": "Issuer"
+          },
+          "clientId": {
+            "type": "string",
+            "title": "Clientid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "enabled",
+          "issuer",
+          "clientId"
+        ],
+        "title": "Login"
+      },
+      "Meta": {
+        "properties": {
+          "classes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Classes"
+          },
+          "page_size": {
+            "type": "integer",
+            "title": "Page Size"
+          },
+          "subtypes": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Subtypes"
+          },
+          "status": {
+            "$ref": "#/components/schemas/StatusInfo"
+          },
+          "class_counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Class Counts"
+          }
+        },
+        "type": "object",
+        "required": [
+          "classes",
+          "page_size",
+          "subtypes",
+          "status",
+          "class_counts"
+        ],
+        "title": "Meta"
+      },
+      "Ocr": {
+        "properties": {
+          "text": {
+            "type": "string",
+            "title": "Text"
+          },
+          "conf": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Conf"
+          }
+        },
+        "type": "object",
+        "required": [
+          "text",
+          "conf"
+        ],
+        "title": "Ocr"
+      },
+      "Ok": {
+        "properties": {
+          "ok": {
+            "type": "boolean",
+            "title": "Ok",
+            "default": true
+          }
+        },
+        "type": "object",
+        "title": "Ok"
+      },
+      "RuntimeConfig": {
+        "properties": {
+          "apiBase": {
+            "type": "string",
+            "title": "Apibase"
+          },
+          "basePath": {
+            "type": "string",
+            "title": "Basepath"
+          },
+          "publicUrl": {
+            "type": "string",
+            "title": "Publicurl"
+          },
+          "frameParents": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Frameparents"
+          },
+          "login": {
+            "$ref": "#/components/schemas/Login"
+          }
+        },
+        "type": "object",
+        "required": [
+          "apiBase",
+          "basePath",
+          "publicUrl",
+          "frameParents",
+          "login"
+        ],
+        "title": "RuntimeConfig"
+      },
+      "Stats": {
+        "properties": {
+          "rows": {
+            "items": {
+              "$ref": "#/components/schemas/StatsRow"
+            },
+            "type": "array",
+            "title": "Rows"
+          }
+        },
+        "type": "object",
+        "required": [
+          "rows"
+        ],
+        "title": "Stats"
+      },
+      "StatsRow": {
+        "properties": {
+          "grp": {
+            "type": "string",
+            "title": "Grp"
+          },
+          "class": {
+            "type": "string",
+            "title": "Class"
+          },
+          "st": {
+            "type": "string",
+            "title": "St"
+          },
+          "n": {
+            "type": "integer",
+            "title": "N"
+          }
+        },
+        "type": "object",
+        "required": [
+          "grp",
+          "class",
+          "st",
+          "n"
+        ],
+        "title": "StatsRow"
+      },
+      "StatusInfo": {
+        "properties": {
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "values": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Values"
+          },
+          "hidden": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Hidden"
+          }
+        },
+        "type": "object",
+        "required": [
+          "label",
+          "values",
+          "hidden"
+        ],
+        "title": "StatusInfo"
+      },
+      "SubtypeAnswer": {
+        "properties": {
+          "verdict": {
+            "type": "string",
+            "enum": [
+              "match",
+              "no"
+            ],
+            "title": "Verdict"
+          }
+        },
+        "type": "object",
+        "required": [
+          "verdict"
+        ],
+        "title": "SubtypeAnswer"
+      },
+      "SubtypeItem": {
+        "properties": {
+          "hash": {
+            "type": "string",
+            "title": "Hash"
+          },
+          "grp": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Grp"
+          },
+          "kind": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Kind"
+          },
+          "taken": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Taken"
+          },
+          "class": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Class"
+          },
+          "path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Path"
+          },
+          "st": {
+            "type": "string",
+            "title": "St"
+          },
+          "hidden": {
+            "type": "boolean",
+            "title": "Hidden"
+          },
+          "conf": {
+            "type": "number",
+            "title": "Conf"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Label"
+          },
+          "by_you": {
+            "type": "boolean",
+            "title": "By You"
+          }
+        },
+        "type": "object",
+        "required": [
+          "hash",
+          "grp",
+          "kind",
+          "taken",
+          "class",
+          "path",
+          "st",
+          "hidden",
+          "conf",
+          "label",
+          "by_you"
+        ],
+        "title": "SubtypeItem"
+      },
+      "SubtypePage": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "title": "Type"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Label"
+          },
+          "counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Counts"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/SubtypeItem"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "type",
+          "status",
+          "label",
+          "counts",
+          "items"
+        ],
+        "title": "SubtypePage"
+      },
+      "Tile": {
+        "properties": {
+          "hash": {
+            "type": "string",
+            "title": "Hash"
+          },
+          "grp": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Grp"
+          },
+          "kind": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Kind"
+          },
+          "taken": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Taken"
+          },
+          "class": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Class"
+          },
+          "path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Path"
+          },
+          "st": {
+            "type": "string",
+            "title": "St"
+          },
+          "hidden": {
+            "type": "boolean",
+            "title": "Hidden"
+          }
+        },
+        "type": "object",
+        "required": [
+          "hash",
+          "grp",
+          "kind",
+          "taken",
+          "class",
+          "path",
+          "st",
+          "hidden"
+        ],
+        "title": "Tile",
+        "description": "One item in a list. `st` is a plugin's status ('none' without one); `hidden` items are blurred until clicked."
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    }
+  }
+}

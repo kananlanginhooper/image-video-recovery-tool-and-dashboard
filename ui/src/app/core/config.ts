@@ -1,19 +1,12 @@
 import { HttpInterceptorFn } from '@angular/common/http';
 import { DATA_MODE } from './data-mode';
+import type { RuntimeConfig } from './models';
 
 /**
  * Runtime config from the app's own back end (GET api/config, relative to <base href>), loaded before the app starts, so no
  * host, port, scheme or path is compiled in: the same build runs at http://<ip>:<port>, under a path prefix (UI_BASE_PATH),
  * or at https://<app>.<domain> (DEV-STANDARD "subdomain-ready").
  */
-export interface RuntimeConfig {
-  apiBase: string;                 // '<base path>api/' on its own origin
-  basePath: string;                // where the app is served ('/' or e.g. '/media/')
-  publicUrl: string;               // where the app lives ('' = wherever it was opened)
-  frameParents: string[];          // wrapper origins allowed to frame it (exact origins for any future postMessage)
-  login: { enabled: boolean; issuer: string; clientId: string };
-}
-
 let cfg: RuntimeConfig = { apiBase: '/api/', basePath: '/', publicUrl: '', frameParents: [], login: { enabled: false, issuer: '', clientId: '' } };
 
 export const config = () => cfg;

@@ -1,5 +1,5 @@
 import { HttpInterceptorFn } from '@angular/common/http';
-import type { RuntimeConfig } from './config';
+import type { RuntimeConfig } from './models';
 
 /** What a data source provides (data-mode.ts = the real back end, data-mode.demo.ts = mock data in the browser). */
 export interface DataMode {

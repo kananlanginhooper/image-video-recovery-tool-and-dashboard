@@ -1,4 +1,6 @@
-/** Display helpers, same output as app.py's size_h() and its taken captions. */
+import { format, isValid, parseISO } from 'date-fns';
+
+/** Display helpers: sizes, dates, counts, query parameters. One place for formatting (DASHBOARD-TEMPLATE). */
 
 export function sizeH(n: number | null | undefined): string {
   if (!n) return '';
@@ -9,15 +11,19 @@ export function sizeH(n: number | null | undefined): string {
   return `${n.toFixed(1)} TB`;
 }
 
-/** '2024-05-01T12:34:56' -> '2024-05-01 12:34' */
-export const taken = (t: string | null | undefined) => (t ? t.replace('T', ' ').slice(0, 16) : '');
+/** '2024-05-01T12:34:56' -> '2024-05-01 12:34' (local wall-clock time as stored; no time zone shift) */
+export function taken(t: string | null | undefined): string {
+  if (!t) return '';
+  const d = parseISO(t);
+  return isValid(d) ? format(d, 'yyyy-MM-dd HH:mm') : '';
+}
 
 export const num = (n: number | null | undefined) => (n ?? 0).toLocaleString('en-US');
 
 /** {"euphemism": 2, "theme": 1} -> 'euphemism ×2, theme ×1' */
 export const cats = (c: Record<string, number>) => Object.entries(c).map(([k, v]) => `${k} ×${v}`).join(', ');
 
-/** drop empty values so they don't reach the query string (app.py treats '' and 'all' as "no filter") */
+/** drop empty values so they don't reach the query string (the API treats '' and 'all' as "no filter") */
 export function params(o: Record<string, string | number | null | undefined>): Record<string, string | number> {
   const out: Record<string, string | number> = {};
   for (const [k, v] of Object.entries(o)) if (v !== null && v !== undefined && v !== '' && v !== 'all') out[k] = v;

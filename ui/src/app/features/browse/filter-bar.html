@@ -1,0 +1,57 @@
+<form class="filters" (submit)="$event.preventDefault(); submit()">
+  <mat-form-field>
+    <mat-label>Type</mat-label>
+    <mat-select [value]="draft().grp || 'all'" (valueChange)="set('grp', $event)">
+      <mat-option value="all">images + videos</mat-option>
+      <mat-option value="image">image</mat-option>
+      <mat-option value="video">video</mat-option>
+    </mat-select>
+  </mat-form-field>
+
+  <mat-form-field>
+    <mat-label>Class</mat-label>
+    <mat-select [value]="draft().class || 'all'" (valueChange)="set('class', $event)">
+      <mat-option value="all">any class</mat-option>
+      @for (c of meta()?.classes; track c) { <mat-option [value]="c">{{ c }}</mat-option> }
+    </mat-select>
+  </mat-form-field>
+
+  @if (meta()?.status?.values?.length) {
+    <mat-form-field>
+      <mat-label>{{ meta()!.status.label }}</mat-label>
+      <mat-select [value]="draft().status || 'all'" (valueChange)="set('status', $event)">
+        <mat-option value="all">any {{ meta()!.status.label }}</mat-option>
+        @for (s of meta()!.status.values; track s) { <mat-option [value]="s">{{ s }}</mat-option> }
+      </mat-select>
+    </mat-form-field>
+  }
+
+  <mat-form-field class="date">
+    <mat-label>From</mat-label>
+    <input matInput type="date" [value]="draft().from || ''" (change)="set('from', $any($event.target).value)">
+  </mat-form-field>
+  <mat-form-field class="date">
+    <mat-label>To</mat-label>
+    <input matInput type="date" [value]="draft().to || ''" (change)="set('to', $any($event.target).value)">
+  </mat-form-field>
+
+  <mat-form-field>
+    <mat-label>OCR text search</mat-label>
+    <input matInput [value]="draft().q || ''" (input)="set('q', $any($event.target).value)">
+  </mat-form-field>
+  <mat-form-field class="wide">
+    <mat-label>Folder prefix</mat-label>
+    <input matInput [value]="draft().folder || ''" (input)="set('folder', $any($event.target).value)">
+  </mat-form-field>
+
+  <mat-form-field>
+    <mat-label>Order</mat-label>
+    <mat-select [value]="draft().sort || 'new'" (valueChange)="set('sort', $event)">
+      <mat-option value="new">newest first</mat-option>
+      <mat-option value="old">oldest first</mat-option>
+    </mat-select>
+  </mat-form-field>
+
+  <button mat-flat-button type="submit">Apply</button>
+  <button mat-button type="button" (click)="resetFilters.emit()">Reset</button>
+</form>
