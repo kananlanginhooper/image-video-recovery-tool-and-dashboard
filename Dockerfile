@@ -18,8 +18,9 @@ RUN pip install --no-cache-dir -r api/requirements.txt
 COPY api/ api/
 COPY --from=ui /ui/dist/media/browser ui/dist/media/browser
 ENV MEDIA_DB_CNF=/run/secrets/db.cnf MEDIA_CACHE=/cache MEDIA_UI_DIR=/app/ui/dist/media/browser \
-    MEDIA_HOST=0.0.0.0 MEDIA_PORT=8093
+    MEDIA_HOST=0.0.0.0 MEDIA_PORT=8093 FORWARDED_ALLOW_IPS=127.0.0.1
 WORKDIR /app/api
-CMD ["sh", "-c", "exec uvicorn app:app --host \"$MEDIA_HOST\" --port \"$MEDIA_PORT\" --no-access-log"]
+# --proxy-headers: behind a reverse proxy (TLS ending there), X-Forwarded-Proto/For from FORWARDED_ALLOW_IPS are honored
+CMD ["sh", "-c", "exec uvicorn app:app --host \"$MEDIA_HOST\" --port \"$MEDIA_PORT\" --proxy-headers --forwarded-allow-ips \"$FORWARDED_ALLOW_IPS\" --no-access-log"]
 HEALTHCHECK --interval=60s --timeout=10s --start-period=20s \
   CMD python -c "import os,urllib.request;urllib.request.urlopen(f'http://127.0.0.1:{os.environ[\"MEDIA_PORT\"]}/api/health',timeout=8)"

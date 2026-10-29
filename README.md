@@ -21,6 +21,15 @@ docker compose up -d --build
 - **Elsewhere (e.g. a laptop):** set `MEDIA_FILES_UPSTREAM` to an instance that has the files. Thumbnails, images, originals and frames are then streamed from it, Range included, while lists, details and answers stay local.
 - **Access:** there is no login. Keep it on your LAN (set `MEDIA_HOST` to a LAN address).
 
+## Hosting: any address, any parent
+
+Nothing about hosts, ports or schemes is compiled in:
+- **UI config at runtime:** the UI loads `GET /api/config` from its own back end before it starts, and calls the API on its own origin. The same build runs at `http://<ip>:8093`, under a path prefix, or at `https://media.<domain>`; only `.env` changes.
+- **Path prefix:** with `UI_BASE_PATH` (e.g. `/media/`), `index.html` is sent with that `<base href>`, and requests under the prefix are routed as if at the root.
+- **Framing:** responses carry `Content-Security-Policy: frame-ancestors 'self' <FRAME_ANCESTORS>`. Only this app and the configured parent pages (e.g. a dashboard wrapper) may show it in an iframe.
+- **Behind a reverse proxy:** uvicorn runs with `--proxy-headers`, trusting `FORWARDED_ALLOW_IPS`.
+- **No cookies or shared storage:** the app sets no cookies, and its `localStorage` keys stay in its own origin.
+
 ## The catalogue it reads
 
 | Table | Used for |
@@ -51,6 +60,7 @@ cd ui && npm ci && npx ng serve --proxy-config proxy.conf.json   # UI on :4200, 
 
 | Group | Routes |
 |---|---|
+| Config (GET) | `/api/config`: the UI's runtime config |
 | Lists (GET) | `/api/meta`<br>`/api/browse?grp&class&status&from&to&q&folder&sort&page`<br>`/api/folders?prefix`<br>`/api/subtypes?type&status&label&sample`<br>`/api/stats` |
 | One item (GET) | `/api/item/{hash}?ctx` (`ctx` is the list it was opened from, for previous/next) |
 | Media (GET) | `/api/thumb/{hash}`<br>`/api/view/{hash}`<br>`/api/file/{hash}` (supports Range, so videos seek)<br>`/api/frame/{hash}/{seconds}` |
