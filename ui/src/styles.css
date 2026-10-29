@@ -68,3 +68,6 @@ pre.ocr { white-space: pre-wrap; background: var(--card); border: 1px solid var(
 .navbar { display: flex; gap: 10px; align-items: center; margin: 0 0 8px; position: sticky; top: 0; background: var(--bg); padding: 4px 0; z-index: 1; }
 .viewer { position: relative; }
 .viewer img, .viewer video { width: 100%; height: calc(100vh - 120px); min-height: 320px; object-fit: contain; display: block; background: var(--chip); }
+
+/* demo build: a tag in the header */
+.demo-tag { margin-left: 8px; font-size: 12px; padding: 2px 8px; border-radius: 99px; background: var(--chip); color: var(--muted); }

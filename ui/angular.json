@@ -95,6 +95,32 @@
                   "with": "src/private/plugins.ts"
                 }
               ]
+            },
+            "demo": {
+              "budgets": [
+                {
+                  "type": "initial",
+                  "maximumWarning": "500kB",
+                  "maximumError": "1MB"
+                },
+                {
+                  "type": "anyComponentStyle",
+                  "maximumWarning": "24kB",
+                  "maximumError": "32kB"
+                }
+              ],
+              "outputHashing": "all",
+              "fileReplacements": [
+                {
+                  "replace": "src/app/data-mode.ts",
+                  "with": "src/app/data-mode.demo.ts"
+                }
+              ],
+              "outputPath": {
+                "base": "../docs",
+                "browser": ""
+              },
+              "baseHref": "./"
             }
           },
           "defaultConfiguration": "production"
@@ -107,6 +133,9 @@
             },
             "development": {
               "buildTarget": "media:build:development"
+            },
+            "demo": {
+              "buildTarget": "media:build:demo"
             }
           },
           "defaultConfiguration": "development"

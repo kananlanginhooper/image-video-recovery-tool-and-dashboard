@@ -5,7 +5,9 @@
     "ng": "ng",
     "start": "ng serve",
     "build": "ng build",
-    "watch": "ng build --watch --configuration development"
+    "watch": "ng build --watch --configuration development",
+    "build:demo": "ng build --configuration demo && node -e \"require('fs').copyFileSync('../docs/index.html','../docs/404.html');require('fs').writeFileSync('../docs/.nojekyll','')\"",
+    "start:demo": "ng serve --configuration demo"
   },
   "prettier": {
     "printWidth": 100,

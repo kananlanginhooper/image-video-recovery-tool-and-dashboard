@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/c
 import { NgComponentOutlet } from '@angular/common';
 import { MediaStore, VIEWS } from './media.store';
 import { PLUGINS } from './plugins';
+import { DATA_MODE } from './data-mode';
 import { Browse } from './views/browse';
 import { Folders } from './views/folders';
 import { Subtypes } from './views/subtypes';
@@ -15,7 +16,7 @@ import { Viewer } from './viewer';
   imports: [Browse, Folders, Subtypes, Stats, Viewer, NgComponentOutlet],
   template: `
     <header>
-      <b>Media library</b>
+      <b>Media library</b>@if (demo) { <span class="demo-tag" title="Generated sample data in your browser; nothing is saved to a server">{{ demo }}</span> }
       <nav>
         @for (v of views; track v.id) {
           <a href="" [class.on]="store.view() === v.id" (click)="$event.preventDefault(); go(v.id)">{{ v.label }}</a>
@@ -36,6 +37,7 @@ import { Viewer } from './viewer';
 })
 export class App {
   protected readonly store = inject(MediaStore);
+  protected readonly demo = DATA_MODE.label;
   private readonly extra = PLUGINS.flatMap(p => p.views ?? []);
   /** built-in pages with plugin pages after Folders */
   protected readonly views = [...VIEWS.slice(0, 2), ...this.extra, ...VIEWS.slice(2)];
