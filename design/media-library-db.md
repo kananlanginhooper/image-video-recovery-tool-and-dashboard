@@ -1,6 +1,6 @@
 # The app's own database: `media_library` (proposal, nothing created)
 
-**Status:** this is a proposal. The database exists, empty, and no tables are created until the open questions below are answered.
+**Status:** on hold as a proposal. The database exists, empty, and no tables are created until the open questions below are answered. Cloud-copy data belongs to the offsite backup project (see "Offsite copies").
 
 The app reads its catalogue from another database (`media_browse`, `files`, `ocr_result`, … in the recovery catalogue) and writes review answers back there, because the catalogue's scanners and offsite jobs read those answers. Data the app **creates itself** goes in its own database, `media_library` (MySQL 8.4, same server, so it can join the catalogue by `hash`).
 
@@ -62,9 +62,18 @@ CREATE TABLE item_tag (
 
 When login arrives (OIDC, one IdP for every app), each table gets an `owner` column (the IdP `sub`) if more than one person uses it. Until then it's single-user.
 
+## Offsite copies: another project's data, read here
+
+The offsite backup project (cloud copies of the library) keeps its own data in **its own database**, not here: push and restore runs, restore requests, and storage snapshots. Agreed between the two projects.
+
+- **Which files are offsite** is already recorded per hash in the catalogue (`offsite_copy`: hash, provider, account, remote path, verified by/at). The backup jobs write it, and it stays the source of truth. This app can read it with its existing catalogue access, for an "offsite" badge or filter, with no copy here.
+- **Later:** the backup project publishes one read view for this app, one row per hash: offsite on each provider, last verified, last restored. This app gets SELECT on that view.
+  - If that database is Postgres, the app reads the view on a separate connection and merges by hash, rather than joining in SQL.
+- **What's kept off the cloud** is still decided by the review answers in the catalogue (a private verdict keeps an item offsite-excluded). Nothing moves for that.
+
 ## Open questions (for the owner)
 
-1. **What should the app collect first?** Albums, favorites, tags, captions, or something else, such as "people" groupings, an event timeline, or a list of items to delete or keep?
+1. **What should the app collect first?** Data collection from cloud storage belongs to the offsite backup project (above). What's left here is app-only data: albums, favorites, tags, captions. On hold until it's wanted.
 2. **Is "hidden" a soft hide in this app only?** Or should it also feed the catalogue's cleanup or offsite decisions? If so, it belongs in the catalogue as a reviewed answer, not here.
 3. **Deleting files:** if the app should ever delete or quarantine files, that's a catalogue action with its own audit table, designed separately.
 4. **Engine:** MySQL is proposed, for the joins with the catalogue by hash. Postgres would need the catalogue reads to stay separate queries.
