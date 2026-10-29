@@ -26,7 +26,7 @@ docker compose up -d --build
 Nothing about hosts, ports or schemes is compiled in:
 - **UI config at runtime:** the UI loads `GET /api/config` from its own back end before it starts, and calls the API on its own origin. The same build runs at `http://<ip>:8093`, under a path prefix, or at `https://media.<domain>`; only `.env` changes.
 - **Path prefix:** with `UI_BASE_PATH` (e.g. `/media/`), `index.html` is sent with that `<base href>`, and requests under the prefix are routed as if at the root.
-- **Framing:** responses carry `Content-Security-Policy: frame-ancestors 'self' <FRAME_ANCESTORS>`. `FRAME_ANCESTORS` lists the dashboard wrapper origins (default: the laptop wrapper, `http://localhost:4310`), so being framed by the wrapper is the normal case; other pages can't frame it.
+- **Framing:** responses carry `Content-Security-Policy: frame-ancestors 'self' <FRAME_ANCESTORS>`. `FRAME_ANCESTORS` lists the dashboard wrapper origins (default: the laptop wrapper, `http://localhost:8097`), so being framed by the wrapper is the normal case; other pages can't frame it.
 - **Behind a reverse proxy:** uvicorn runs with `--proxy-headers`, trusting `FORWARDED_ALLOW_IPS`.
 - **No cookies or shared storage:** the app sets no cookies, and its `localStorage` keys stay in its own origin.
 
