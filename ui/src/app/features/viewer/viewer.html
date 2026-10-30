@@ -3,7 +3,7 @@
     <button mat-stroked-button (click)="close()"><mat-icon>close</mat-icon> Close</button>
     <button mat-stroked-button [disabled]="!it()?.prev" (click)="step('prev')"><mat-icon>chevron_left</mat-icon> Previous</button>
     <button mat-stroked-button [disabled]="!it()?.next" (click)="step('next')">Next <mat-icon iconPositionEnd>chevron_right</mat-icon></button>
-    <span class="muted">{{ cur()?.ctx ? 'arrow keys or swipe also work · Esc closes' : 'open an item from a list to step through it · Esc closes' }}</span>
+    <span class="muted hint">{{ cur()?.ctx ? 'arrow keys or swipe also work · Esc closes' : 'open an item from a list to step through it · Esc closes' }}</span>
   </div>
 
   @if (error()) { <p class="warn">{{ error() }}</p> }

@@ -10,7 +10,7 @@ import { num } from '../../shared/format';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [MatTableModule, MatButtonModule],
   template: `
-    <table mat-table [dataSource]="rows()" class="compact">
+    <div class="scroll-x"><table mat-table [dataSource]="rows()" class="compact">
       <ng-container matColumnDef="name">
         <th mat-header-cell *matHeaderCellDef>Folder</th>
         <td mat-cell *matCellDef="let r"><a href="" (click)="$event.preventDefault(); open.emit(r.path)">{{ r.name }}/</a></td>
@@ -29,7 +29,7 @@ import { num } from '../../shared/format';
       </ng-container>
       <tr mat-header-row *matHeaderRowDef="cols"></tr>
       <tr mat-row *matRowDef="let r; columns: cols"></tr>
-    </table>`,
+    </table></div>`,
 })
 export class FolderTable {
   readonly rows = input.required<FolderRow[]>();

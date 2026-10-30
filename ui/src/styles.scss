@@ -1,5 +1,6 @@
 /* Media library styles, on the shared theme (src/styles/theme.scss, listed first in angular.json).
    Colors, spacing and type come from its --app-* tokens; Material components style themselves. */
+@use '@angular/material' as mat;
 
 :root {
   // this app's accent: the media library's green
@@ -80,4 +81,30 @@ pre.ocr { white-space: pre-wrap; background: var(--app-card); border: 1px solid 
 .viewer-wrap { padding: var(--app-space-3) var(--app-space-4); }
 .navbar { display: flex; gap: var(--app-space-2); align-items: center; flex-wrap: wrap; margin: 0 0 var(--app-space-2); position: sticky; top: 0; background: var(--app-bg); padding: var(--app-space-1) 0; z-index: 1; }
 .viewer { position: relative; }
-.viewer img, .viewer video { width: 100%; height: calc(100vh - 130px); min-height: 320px; object-fit: contain; display: block; background: var(--app-chip); }
+.viewer img, .viewer video { width: 100%; height: calc(100vh - 130px); height: calc(100dvh - 130px); min-height: 320px; object-fit: contain; display: block; background: var(--app-chip); }
+
+/* long values (paths, hashes) wrap instead of widening the page */
+table.meta td:last-child { overflow-wrap: anywhere; }
+.crumbs { overflow-wrap: anywhere; }
+/* a table wider than the screen scrolls sideways inside this, not the page */
+.scroll-x { overflow-x: auto; max-width: 100%; }
+
+/* phones and touch screens (DASHBOARD-REQUIREMENTS 5a): 44 px tap targets, 16 px inputs so iOS doesn't zoom,
+   more room between answer buttons so a tap can't land on the wrong one */
+@media (max-width: 599px), (max-height: 500px), (pointer: coarse) {
+  @include mat.chips-overrides((container-height: 44px));
+  input, textarea, select, .mat-mdc-select { font-size: 16px !important; }
+  .chip, .act a, .crumbs a, .switch a, td.mat-mdc-cell a,
+  button:not(.mat-mdc-button-base):not(.mdc-button):not(.mat-mdc-chip *) {
+    display: inline-flex; align-items: center; min-height: 44px; min-width: 44px; box-sizing: border-box;
+  }
+  .chip { padding: 0 14px; justify-content: center; }
+  .act { gap: var(--app-space-4); }
+  table.compact .mat-mdc-row { height: 44px; }
+}
+@media (max-width: 599px) {
+  header, main, .viewer-wrap { padding-left: max(var(--app-space-2), env(safe-area-inset-left)); padding-right: max(var(--app-space-2), env(safe-area-inset-right)); }
+  table.compact { min-width: 0; }
+  .viewer img, .viewer video { height: calc(100dvh - 170px); min-height: 240px; }
+  .navbar .hint { display: none; }
+}
