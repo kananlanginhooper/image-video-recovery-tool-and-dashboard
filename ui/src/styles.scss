@@ -108,3 +108,10 @@ table.meta td:last-child { overflow-wrap: anywhere; }
   .viewer img, .viewer video { height: calc(100dvh - 170px); min-height: 240px; }
   .navbar .hint { display: none; }
 }
+
+/* phone header: just the tab strip (the brand is in the page title and the wrapper's tab) */
+@media (max-width: 600px) {
+  header { gap: 0; padding: 0; }
+  header .brand, header .demo-tag { display: none; }
+  header nav { min-width: 0; }
+}

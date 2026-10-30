@@ -5,7 +5,7 @@ import { MediaApi, lsKey } from './media-api';
 /** Built-in pages; plugins add theirs (plugin.ts) after Folders */
 export const VIEWS = [
   { id: 'browse', label: 'Browse' }, { id: 'folders', label: 'Folders' },
-  { id: 'subtypes', label: 'Review subtypes' }, { id: 'stats', label: 'Counts' },
+  { id: 'subtypes', label: 'Subtypes' }, { id: 'stats', label: 'Counts' },
 ];
 
 /** Browse filters (same query parameters as the API) */
