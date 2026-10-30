@@ -15,7 +15,7 @@ import { num } from '../../shared/format';
     @if (res.isLoading()) { <mat-progress-bar mode="indeterminate" /><p class="muted">counting… (takes about 10 s when not cached)</p> }
     @if (res.error()) { <p class="warn">Couldn't load ({{ res.error()?.message }}).</p> }
     @if (res.value(); as d) {
-      <table mat-table [dataSource]="d.rows" class="compact">
+      <div class="scroll-x"><table mat-table [dataSource]="d.rows" class="compact">
         <ng-container matColumnDef="grp">
           <th mat-header-cell *matHeaderCellDef>Type</th>
           <td mat-cell *matCellDef="let r">{{ r.grp }}</td>
@@ -36,7 +36,7 @@ import { num } from '../../shared/format';
         </ng-container>
         <tr mat-header-row *matHeaderRowDef="cols()"></tr>
         <tr mat-row *matRowDef="let r; columns: cols()"></tr>
-      </table>
+      </table></div>
     }`,
 })
 export class StatsPage {

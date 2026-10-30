@@ -1,4 +1,8 @@
-<form class="filters" (submit)="$event.preventDefault(); submit()">
+<!-- on a phone the filters fold behind this button, so the grid starts on the first screen -->
+<button mat-stroked-button class="toggle" type="button" [attr.aria-expanded]="open()" (click)="open.set(!open())">
+  <mat-icon>tune</mat-icon> Filters{{ active() ? ' (' + active() + ')' : '' }}
+</button>
+<form class="filters" [class.open]="open()" (submit)="$event.preventDefault(); submit()">
   <mat-form-field>
     <mat-label>Type</mat-label>
     <mat-select [value]="draft().grp || 'all'" (valueChange)="set('grp', $event)">

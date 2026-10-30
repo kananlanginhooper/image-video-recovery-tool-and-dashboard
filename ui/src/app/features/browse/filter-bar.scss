@@ -11,3 +11,14 @@
 mat-form-field { width: 170px; }
 mat-form-field.date { width: 160px; }
 mat-form-field.wide { width: 230px; }
+
+.toggle { display: none; }
+
+/* phone (or a landscape phone): a Filters button; open, the fields take the full width two to a row */
+@media (max-width: 599px), (max-height: 500px) {
+  .toggle { display: inline-flex; justify-self: start; }
+  .filters { display: none; }
+  .filters.open { display: grid; grid-template-columns: 1fr 1fr; margin-top: var(--app-space-2); }
+  .filters.open mat-form-field { width: 100%; }
+  .filters.open mat-form-field.wide { grid-column: 1 / -1; }
+}
