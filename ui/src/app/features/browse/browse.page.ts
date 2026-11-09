@@ -28,11 +28,13 @@ const AHEAD = 1600;
     @if (meta()?.status?.hidden?.length) {
       <p class="muted">{{ meta()!.status.hidden.join(' and ') }} items are blurred; click one to reveal it, click again to open it.</p>
     }
-    @if (total() !== null) { <p class="muted">{{ num(total()!) }} items · {{ num(items().length) }} loaded</p> }
+    @if (items().length || total() !== null) {
+      <p class="muted">{{ total() === null ? 'counting…' : num(total()!) + ' items' }} · {{ num(items().length) }} loaded</p>
+    }
     @if (error()) { <p class="warn">Couldn't load more ({{ error() }}). <button type="button" (click)="more()">Try again</button></p> }
     <div class="grid">
       @for (t of items(); track t.hash) { <media-tile [it]="t" (open)="store.item.set({ hash: t.hash, ctx: ctx })" /> }
-      @empty { @if (total() === 0) { <p class="muted">Nothing matches.</p> } }
+      @empty { @if (done()) { <p class="muted">Nothing matches.</p> } }
     </div>
     <div #end class="more">
       @if (loading()) { <mat-progress-bar mode="indeterminate" /> }
@@ -91,6 +93,8 @@ export class BrowsePage {
     this.next = ''; this.ctx = '';
     window.scrollTo(0, 0);
     this.load(f);
+    const run = this.run;
+    this.api.count(params(f)).then(n => { if (run === this.run) this.total.set(n); }, () => undefined);
   }
 
   /** the next 120, when there are more and none are on the way */
@@ -105,7 +109,7 @@ export class BrowsePage {
       const d = await this.api.page(params({ ...f, ...(this.next ? { after: this.next } : {}) }));
       if (run !== this.run) return;
       this.items.update(xs => [...xs, ...d.items]);
-      this.total.set(d.total); this.ctx = d.ctx; this.next = d.next ?? ''; this.done.set(!d.next);
+      this.ctx = d.ctx; this.next = d.next ?? ''; this.done.set(!d.next);
     } catch (e) {
       if (run === this.run) this.error.set((e as Error).message || 'error');
     } finally {

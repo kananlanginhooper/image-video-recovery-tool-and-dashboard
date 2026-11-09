@@ -19,7 +19,8 @@ def test_browse_shape_and_ctx(client):
     r = client.get("/api/browse", params={"class": "camera"})
     assert r.status_code == 200
     d = r.json()
-    assert d["total"] == 1 and d["next"] is None and d["ctx"] == "b:class=camera"
+    assert d["next"] is None and d["ctx"] == "b:class=camera"
+    assert client.get("/api/browse/count", params={"class": "camera"}).json() == {"total": 1}
     assert d["items"][0] == {
         "hash": H,
         "grp": "image",
@@ -109,6 +110,7 @@ def test_plugin_status_hides_items_and_joins_its_table(plugin_client, db):
     tile = plugin_client.get("/api/browse", params={"status": "flagged"}).json()["items"][0]
     assert (tile["st"], tile["hidden"]) == ("flagged", True)
     # the filter and the count both go through the plugin's join
+    plugin_client.get("/api/browse/count", params={"status": "flagged"})
     joined = [s for s in db.sql if "LEFT JOIN scan s ON s.hash=b.hash" in s and "'flagged'=%s" in s]
     assert any(s.startswith("SELECT b.hash") for s in joined) and any("COUNT(*)" in s for s in joined)
 

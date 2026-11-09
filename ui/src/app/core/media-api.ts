@@ -24,6 +24,10 @@ export class MediaApi {
   meta() { return httpResource<Meta>(() => '/api/meta'); }
   /** one batch of Browse (120); its `next` asks for the following batch as ?after= */
   page(params: Params): Promise<BrowsePage> { return firstValueFrom(this.http.get<BrowsePage>('/api/browse', { params })); }
+  /** how many the same filters match: separate, as a first count can take seconds while the batch takes milliseconds */
+  count(params: Params): Promise<number> {
+    return firstValueFrom(this.http.get<{ total: number }>('/api/browse/count', { params })).then(r => r.total);
+  }
   folders(prefix: () => string) { return httpResource<FolderList>(() => ({ url: '/api/folders', params: { prefix: prefix() } })); }
   subtypes(params: () => Params) { return httpResource<SubtypePage>(() => ({ url: '/api/subtypes', params: params() })); }
   stats() { return httpResource<Stats>(() => '/api/stats'); }

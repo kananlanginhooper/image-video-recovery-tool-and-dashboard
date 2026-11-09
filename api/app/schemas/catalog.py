@@ -22,9 +22,12 @@ class Tile(BaseModel):
 
 class BrowsePage(BaseModel):
     items: list[Tile]
-    total: int
     next: str | None = Field(description="pass back as ?after= for the next 120; null at the end")
     ctx: str = Field(description="the list, for the viewer's previous/next (pass back as ?ctx=)")
+
+
+class Count(BaseModel):
+    total: int
 
 
 class FolderRow(BaseModel):

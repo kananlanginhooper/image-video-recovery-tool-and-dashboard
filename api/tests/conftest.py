@@ -43,9 +43,11 @@ class FakeDb:
         st = STATUS.expr.strip("'")
         if "COUNT(*) n FROM media_browse b" in sql or "COUNT(*) n FROM media_browse WHERE" in sql:
             return [{"n": 1}]
-        if sql.startswith("SELECT b.hash, b.grp"):
+        if sql.startswith("SELECT b.hash FROM"):
             # the one item is dated: only the first step of a list from its start (the dated items) finds it
-            return [{**ROW, "st": st}] if "AND b.taken IS NOT NULL ORDER BY" in sql else []
+            return [{"hash": H}] if "AND b.taken IS NOT NULL ORDER BY" in sql else []
+        if sql.startswith("SELECT b.hash, b.grp") and H in args:
+            return [{**ROW, "st": st}]
         if sql.startswith("SELECT b.*") and args and args[0] == H:
             return [{**ROW, **DETAIL, "st": st}]
         return []

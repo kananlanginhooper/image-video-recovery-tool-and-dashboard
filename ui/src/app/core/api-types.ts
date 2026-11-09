@@ -61,6 +61,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/browse/count": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Browse Count
+         * @description How many items the same filters match (seconds the first time, then cached for 5 minutes).
+         */
+        get: operations["browse_count_api_browse_count_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/folders": {
         parameters: {
             query?: never;
@@ -239,8 +259,6 @@ export interface components {
         BrowsePage: {
             /** Items */
             items: components["schemas"]["Tile"][];
-            /** Total */
-            total: number;
             /**
              * Next
              * @description pass back as ?after= for the next 120; null at the end
@@ -258,6 +276,11 @@ export interface components {
             path: string;
             /** Size */
             size: number | null;
+        };
+        /** Count */
+        Count: {
+            /** Total */
+            total: number;
         };
         /** Derived */
         Derived: {
@@ -588,6 +611,8 @@ export interface operations {
     browse_api_browse_get: {
         parameters: {
             query?: {
+                /** @description `next` from the previous answer */
+                after?: string;
                 grp?: "image" | "video" | "all" | "";
                 class?: string;
                 status?: string;
@@ -599,8 +624,6 @@ export interface operations {
                 /** @description an image signal from meta.signals, e.g. product */
                 sig?: string;
                 sort?: "new" | "old" | "";
-                /** @description `next` from the previous answer */
-                after?: string;
             };
             header?: never;
             path?: never;
@@ -615,6 +638,47 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["BrowsePage"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    browse_count_api_browse_count_get: {
+        parameters: {
+            query?: {
+                grp?: "image" | "video" | "all" | "";
+                class?: string;
+                status?: string;
+                folder?: string;
+                from?: string;
+                to?: string;
+                /** @description OCR text search (boolean mode) */
+                q?: string;
+                /** @description an image signal from meta.signals, e.g. product */
+                sig?: string;
+                sort?: "new" | "old" | "";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Count"];
                 };
             };
             /** @description Validation Error */

@@ -30,7 +30,7 @@ function browse(p: URLSearchParams) {
   const start = after ? all.findIndex(i => i.hash === after) + 1 : 0;
   const items = all.slice(start, start + PAGE), last = items[items.length - 1];
   const ctx = new URLSearchParams([...p].filter(([k, v]) => k !== 'after' && v && v !== 'all'));
-  return { items: items.map(tile), total: all.length, next: start + PAGE < all.length && last ? last.taken + '|' + last.hash : null,
+  return { items: items.map(tile), next: start + PAGE < all.length && last ? last.taken + '|' + last.hash : null,
            ctx: 'b:' + ctx.toString() };
 }
 
@@ -96,6 +96,7 @@ export const mockApi: HttpInterceptorFn = (req, next) => {
     else if (path === 'meta') body = { classes: CLASSES, page_size: PAGE, subtypes: SUBTYPES, status: { label: 'status', values: [], hidden: [] },
       class_counts: Object.fromEntries(CLASSES.map(c => [c, ITEMS.filter(i => i.class === c).length])), signals: {}, signal_counts: {} };
     else if (path === 'browse') body = browse(p);
+    else if (path === 'browse/count') body = { total: filtered(p).length };
     else if (path === 'folders') body = folders(p.get('prefix') ?? '');
     else if (path === 'subtypes') body = subtypes(p);
     else if (path === 'stats') body = stats();
