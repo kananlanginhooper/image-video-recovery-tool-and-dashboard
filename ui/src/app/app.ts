@@ -19,7 +19,7 @@ import { Viewer } from './features/viewer/viewer';
       <!-- no paging arrows: the strip scrolls with a finger (theme.scss) -->
       <nav mat-tab-nav-bar [tabPanel]="panel" [disablePagination]="true" mat-stretch-tabs="false" mat-align-tabs="start">
         @for (v of views; track v.id) {
-          <a mat-tab-link [routerLink]="'/' + v.id" routerLinkActive #rla="routerLinkActive" [active]="rla.isActive">{{ v.label }}</a>
+          <a mat-tab-link [routerLink]="'/' + v.id" [queryParams]="store.query(v.id)" routerLinkActive #rla="routerLinkActive" [active]="rla.isActive">{{ v.label }}</a>
         }
       </nav>
     </header>
@@ -37,11 +37,13 @@ export class App {
   private readonly injector = inject(Injector);
 
   constructor() {
-    // the URL is the page: remember it, and close the viewer when the page changes
-    const sub = inject(Router).events.subscribe(e => {
+    // the URL is the page and its state (filters, folder, open item): a link opens that screen
+    const router = inject(Router);
+    const sub = router.events.subscribe(e => {
       if (!(e instanceof NavigationEnd)) return;
       const id = e.urlAfterRedirects.split(/[/?#]/).filter(Boolean)[0];
-      if (id) { this.store.view.set(id); this.store.item.set(null); }
+      if (id) { this.store.view.set(id); this.store.fromUrl(id, router.parseUrl(e.urlAfterRedirects).queryParams); }
+      this.store.urlRead.set(true);
       // keep the current tab in view in the scrolling strip, once the active link is rendered
       afterNextRender(() => this.host.nativeElement.querySelector('a.mdc-tab--active')?.scrollIntoView({ block: 'nearest', inline: 'nearest' }),
         { injector: this.injector });

@@ -1,5 +1,6 @@
-import { Routes } from '@angular/router';
-import { loadStr } from './core/media.store';
+import { inject } from '@angular/core';
+import { Router, Routes } from '@angular/router';
+import { MediaStore, loadStr } from './core/media.store';
 import { PLUGINS } from './core/plugins';
 import { BrowsePage } from './features/browse/browse.page';
 import { FoldersPage } from './features/folders/folders.page';
@@ -15,6 +16,9 @@ export const routes: Routes = [
   ...pluginRoutes,
   { path: 'subtypes', component: SubtypesPage, title: 'Review subtypes · Media library' },
   { path: 'stats', component: StatsPage, title: 'Counts · Media library' },
-  // anything else: the page you used last (kept across visits)
-  { path: '**', redirectTo: () => { const v = loadStr('view', 'browse'); return known.includes(v) ? v : 'browse'; } },
+  // anything else: the page you used last, with its filters (kept across visits)
+  { path: '**', redirectTo: () => {
+    const v = known.includes(loadStr('view', 'browse')) ? loadStr('view', 'browse') : 'browse';
+    return inject(Router).createUrlTree(['/' + v], { queryParams: inject(MediaStore).query(v) });
+  } },
 ];
