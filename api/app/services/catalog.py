@@ -1,6 +1,8 @@
 """The catalogue: Browse, Folders, Subtypes, Counts and one item, read from media_browse and friends."""
 
 import json
+import threading
+import time
 import urllib.parse
 from datetime import datetime
 
@@ -14,7 +16,15 @@ CLASSES = ["camera", "screenshot", "screenshot_probable", "unknown", "unclassifi
 BROWSER_IMAGE = {"jpeg", "png", "gif", "webp"}
 BROWSER_VIDEO = {"mp4", "m4v", "webm", "mov"}
 SUBTYPES = {"web_game_asset": "Web / game assets", "ios_messages": "iOS Messages"}
-NO_DATE = "1000-01-01 00:00:00"  # undated items sort as oldest
+# Image signals (image_signals, a CPU pass over the images): Browse filters for review. name -> (label, condition on s)
+SIGNALS = {
+    "product": ("product photos", "s.product>=0.75"),
+    "faces": ("faces", "s.faces>0"),
+    "damaged": ("damaged / cut off", "(s.decode='partial' OR s.good_frac<0.9 OR s.tail_fill_frac>0.1)"),
+    "transparent": ("transparent", "s.alpha_frac>0.05"),
+    "blank": ("blank", "s.blank=1"),
+}
+TILE_COLS = "b.hash, b.grp, b.kind, b.taken, b.class, b.path"
 
 
 def where_from(p: dict) -> tuple[str, list]:
@@ -38,6 +48,9 @@ def where_from(p: dict) -> tuple[str, list]:
     if p.get("to"):
         w.append("b.taken<DATE_ADD(%s, INTERVAL 1 DAY)")
         a.append(p["to"])
+    if p.get("sig") in SIGNALS:
+        # checked per item while walking the date index (25-80 ms a batch); a semi-join read every match first (~1 s)
+        w.append(f"EXISTS (SELECT /*+ NO_SEMIJOIN() */ 1 FROM image_signals s WHERE s.hash=b.hash AND {SIGNALS[p['sig']][1]})")
     if p.get("q"):
         w.append("b.hash IN (SELECT hash FROM ocr_result WHERE error IS NULL AND MATCH(text) AGAINST (%s IN BOOLEAN MODE))")
         a.append(p["q"])
@@ -72,24 +85,84 @@ def meta() -> dict:
         "subtypes": SUBTYPES,
         "status": {"label": STATUS.label, "values": STATUS.values, "hidden": list(STATUS.hidden)},
         "class_counts": {r["class"]: r["n"] for r in qc("SELECT class, COUNT(*) n FROM media_browse GROUP BY class")},
+        "signals": {k: label for k, (label, _) in SIGNALS.items()},
+        "signal_counts": signal_counts(),
     }
 
 
+_signal_counts: dict = {"at": 0.0, "busy": False, "counts": {}}
+
+
+def signal_counts() -> dict[str, dict[str, int]]:
+    """{signal: {class: n}}, counted in the background (the count reads all of image_signals, ~5 s) and kept 6 hours;
+    empty until the first count is done. health() starts it, so it is ready soon after the app starts."""
+    c = _signal_counts
+    if time.time() - c["at"] > 6 * 3600 and not c["busy"]:
+        c["busy"] = True
+        threading.Thread(target=_count_signals, daemon=True).start()
+    return c["counts"]
+
+
+def _count_signals() -> None:
+    sums = ", ".join(f"SUM({cond}) {k}" for k, (_, cond) in SIGNALS.items())
+    try:
+        rows = q(f"SELECT b.class, {sums} FROM image_signals s JOIN media_browse b ON b.hash=s.hash GROUP BY b.class")
+        _signal_counts["counts"] = {k: {r["class"]: int(r[k] or 0) for r in rows} for k in SIGNALS}
+        _signal_counts["at"] = time.time()
+    except Exception:  # no image_signals table in this database, or it's busy: try again in 10 minutes
+        _signal_counts["at"] = time.time() - 6 * 3600 + 600
+    finally:
+        _signal_counts["busy"] = False
+
+
+def cursor(r: dict) -> str:
+    """Where a list stopped: "<taken>|<hash>" (taken empty when undated); passed back as ?after= for the rest."""
+    return (str(r["taken"]) if r.get("taken") else "") + "|" + r["hash"]
+
+
+def seek(w: str, a: list, newest_first: bool, after: str, limit: int) -> list[dict]:
+    """Up to `limit` items of the list WHERE w, in Browse order, after the cursor (from the start when empty).
+
+    Browse order is (taken, hash) with undated items as the oldest. Each step is one query that walks the (..., taken)
+    indexes, instead of OFFSET (slow deep in a list) or COALESCE(taken) (no index; 0.6-1.6 s per neighbour)."""
+    t, _, h = after.partition("|")
+    dated, undated = "b.taken IS NOT NULL", "b.taken IS NULL"
+    d = "DESC" if newest_first else "ASC"
+    by_date, by_hash = f"b.taken {d}, b.hash {d}", f"b.hash {d}"
+    op = "<" if newest_first else ">"
+    if newest_first:  # dated, newest first, then undated
+        if not h:
+            steps = [(dated, [], by_date), (undated, [], by_hash)]
+        elif t:
+            steps = [(f"b.taken=%s AND b.hash{op}%s", [t, h], by_hash), (f"b.taken{op}%s", [t], by_date), (undated, [], by_hash)]
+        else:
+            steps = [(f"{undated} AND b.hash{op}%s", [h], by_hash)]
+    else:  # undated first, then dated, oldest first
+        if not h:
+            steps = [(undated, [], by_hash), (dated, [], by_date)]
+        elif t:
+            steps = [(f"b.taken=%s AND b.hash{op}%s", [t, h], by_hash), (f"b.taken{op}%s", [t], by_date)]
+        else:
+            steps = [(f"{undated} AND b.hash{op}%s", [h], by_hash), (dated, [], by_date)]
+    out: list[dict] = []
+    for cond, args, order in steps:
+        out += q(
+            f"SELECT {TILE_COLS}, {STATUS.expr} st FROM media_browse b {STATUS.join} WHERE {w} AND {cond} ORDER BY {order} LIMIT %s",
+            a + args + [limit - len(out)],
+        )
+        if len(out) >= limit:
+            break
+    return out
+
+
 def browse(p: dict) -> dict:
-    """120 per page, newest first (sort=old for oldest), with the list's ctx for the viewer."""
-    pg = max(1, int(p.get("page") or 1))
-    order = "ASC" if p.get("sort") == "old" else "DESC"
+    """120 at a time, newest first (sort=old for oldest); `next` continues the list (?after=), `ctx` is it for the viewer."""
     w, a = where_from(p)
-    base = f"FROM media_browse b {STATUS.join} WHERE {w}"
-    rows = q(
-        f"SELECT b.hash, b.grp, b.kind, b.taken, b.class, b.path, {STATUS.expr} st {base} ORDER BY b.taken {order}, b.hash {order}"
-        " LIMIT %s OFFSET %s",
-        a + [PAGE, (pg - 1) * PAGE],
-    )
-    cbase = base if p.get("status") in STATUS.values else f"FROM media_browse b WHERE {w}"
+    rows = seek(w, a, p.get("sort") != "old", p.get("after") or "", PAGE)
+    cbase = f"FROM media_browse b {STATUS.join} WHERE {w}" if p.get("status") in STATUS.values else f"FROM media_browse b WHERE {w}"
     total = qc(f"SELECT COUNT(*) n {cbase}", a)[0]["n"]
-    ctx = "b:" + urllib.parse.urlencode({k: v for k, v in p.items() if k != "page" and v not in (None, "", "all")})
-    return {"items": [tile_json(r) for r in rows], "total": total, "page": pg, "pages": max(1, (total + PAGE - 1) // PAGE), "ctx": ctx}
+    ctx = "b:" + urllib.parse.urlencode({k: v for k, v in p.items() if k != "after" and v not in (None, "", "all")})
+    return {"items": [tile_json(r) for r in rows], "total": total, "next": cursor(rows[-1]) if len(rows) == PAGE else None, "ctx": ctx}
 
 
 def folders(prefix: str) -> dict:
@@ -117,18 +190,10 @@ def browse_neighbors(ctx: str, h: str, cur: dict) -> tuple[str | None, str | Non
     """(previous, next) in the Browse list ctx = "b:<query>" (same order as browse()); None at either end."""
     p = {k: v[0] for k, v in urllib.parse.parse_qs(ctx[2:]).items()}
     w, a = where_from(p)
-    desc = p.get("sort") != "old"
-    base = f"FROM media_browse b {STATUS.join} WHERE {w}"
-    key = f"COALESCE(b.taken,'{NO_DATE}')"
-    curkey = str(cur["taken"]) if cur.get("taken") else NO_DATE
-
-    def step(after: bool) -> str | None:
-        fwd = after == desc  # moving to smaller keys when the list is DESC and we go "after"
-        op, d = ("<", "DESC") if fwd else (">", "ASC")
-        r = q(f"SELECT b.hash {base} AND ({key}, b.hash) {op} (%s, %s) ORDER BY {key} {d}, b.hash {d} LIMIT 1", a + [curkey, h])
-        return r[0]["hash"] if r else None
-
-    return step(False), step(True)
+    newest_first = p.get("sort") != "old"
+    here = cursor({"taken": cur.get("taken"), "hash": h})
+    prev, nxt = seek(w, a, not newest_first, here, 1), seek(w, a, newest_first, here, 1)
+    return (prev[0]["hash"] if prev else None), (nxt[0]["hash"] if nxt else None)
 
 
 def neighbors(ctx: str, h: str, cur: dict) -> tuple[str | None, str | None]:
@@ -165,7 +230,7 @@ def item(h: str, ctx: str) -> dict:
         "playable": r["grp"] == "image" or r["kind"] in BROWSER_VIDEO,
         "prev": prev_h,
         "next": next_h,
-        "extras": [x for fn in ITEM_EXTRAS for x in fn(h, r)],
+        "extras": signal_extras(h) + [x for fn in ITEM_EXTRAS for x in fn(h, r)],
         "copies": [
             {"path": c["p"], "size": c["size"]}
             for c in q("SELECT path_text p, size FROM files WHERE hash=%s AND removed_at IS NULL ORDER BY path_text", (h,))
@@ -178,6 +243,29 @@ def item(h: str, ctx: str) -> dict:
     }
 
 
+def signal_extras(h: str) -> list[dict]:
+    """The image's signals as one details line (numbers only)."""
+    try:
+        cols = "decode, good_frac, tail_fill_frac, blank, blank_kind, alpha_frac, product, faces"
+        r = q(f"SELECT {cols} FROM image_signals WHERE hash=%s", (h,))
+    except Exception:  # no image_signals table in this database
+        return []
+    if not r:
+        return []
+    s, parts = r[0], []
+    if s["product"] is not None and s["product"] >= 0.5:
+        parts.append(f"product photo {s['product']:.2f}")
+    if s["faces"]:
+        parts.append(f"{s['faces']} face" + ("s" if s["faces"] > 1 else ""))
+    if s["decode"] != "ok" or (s["good_frac"] or 1) < 0.9 or (s["tail_fill_frac"] or 0) > 0.1:
+        parts.append(f"decode {s['decode']}" + (f", {s['good_frac']:.0%} readable" if s["good_frac"] is not None else ""))
+    if s["alpha_frac"] and s["alpha_frac"] > 0.01:
+        parts.append(f"{s['alpha_frac']:.0%} transparent")
+    if s["blank"]:
+        parts.append(f"blank ({s['blank_kind'] or '?'})")
+    return [{"label": "signals", "text": " · ".join(parts) or "nothing notable"}]
+
+
 def stats() -> dict:
     return {
         "rows": qc(f"SELECT b.grp, b.class, {STATUS.expr} st, COUNT(*) n FROM media_browse b {STATUS.join} GROUP BY 1,2,3 ORDER BY 1,2,3")
@@ -185,6 +273,7 @@ def stats() -> dict:
 
 
 def health() -> dict:
+    signal_counts()  # keeps the Browse signal counts fresh in the background
     return {"ok": True, "items": q("SELECT COUNT(*) n FROM media_browse")[0]["n"], "at": datetime.now().isoformat(timespec="seconds")}
 
 

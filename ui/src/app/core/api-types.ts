@@ -50,7 +50,7 @@ export interface paths {
         };
         /**
          * Browse
-         * @description 120 per page, newest first; `ctx` in the answer is this list, for the viewer's previous/next.
+         * @description 120 at a time, newest first; `next` in the answer continues the list, `ctx` is this list for the viewer's previous/next.
          */
         get: operations["browse_api_browse_get"];
         put?: never;
@@ -241,10 +241,11 @@ export interface components {
             items: components["schemas"]["Tile"][];
             /** Total */
             total: number;
-            /** Page */
-            page: number;
-            /** Pages */
-            pages: number;
+            /**
+             * Next
+             * @description pass back as ?after= for the next 120; null at the end
+             */
+            next: string | null;
             /**
              * Ctx
              * @description the list, for the viewer's previous/next (pass back as ?ctx=)
@@ -382,6 +383,22 @@ export interface components {
             /** Class Counts */
             class_counts: {
                 [key: string]: number;
+            };
+            /**
+             * Signals
+             * @description image signals offered as Browse filters (?sig=), name -> label
+             */
+            signals: {
+                [key: string]: string;
+            };
+            /**
+             * Signal Counts
+             * @description signal -> class -> items; empty until counted (in the background)
+             */
+            signal_counts: {
+                [key: string]: {
+                    [key: string]: number;
+                };
             };
         };
         /** Ocr */
@@ -579,8 +596,11 @@ export interface operations {
                 to?: string;
                 /** @description OCR text search (boolean mode) */
                 q?: string;
+                /** @description an image signal from meta.signals, e.g. product */
+                sig?: string;
                 sort?: "new" | "old" | "";
-                page?: number;
+                /** @description `next` from the previous answer */
+                after?: string;
             };
             header?: never;
             path?: never;

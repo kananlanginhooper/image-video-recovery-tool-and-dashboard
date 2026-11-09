@@ -14,7 +14,7 @@ from fastapi.testclient import TestClient
 
 from app.core.config import settings
 from app.main import create_app
-from app.services import catalog
+from app.services import catalog, files
 from app.services.status import ITEM_EXTRAS, NEIGHBORS, STATUS
 
 H = "a" * 64  # the one item in the fake catalogue
@@ -44,7 +44,8 @@ class FakeDb:
         if "COUNT(*) n FROM media_browse b" in sql or "COUNT(*) n FROM media_browse WHERE" in sql:
             return [{"n": 1}]
         if sql.startswith("SELECT b.hash, b.grp"):
-            return [{**ROW, "st": st}]
+            # the one item is dated: only the first step of a list from its start (the dated items) finds it
+            return [{**ROW, "st": st}] if "AND b.taken IS NOT NULL ORDER BY" in sql else []
         if sql.startswith("SELECT b.*") and args and args[0] == H:
             return [{**ROW, **DETAIL, "st": st}]
         return []
@@ -60,6 +61,7 @@ def db(monkeypatch):
     monkeypatch.setattr(catalog, "q", fake.q)
     monkeypatch.setattr(catalog, "qc", fake.q)
     monkeypatch.setattr(catalog, "execute", fake.execute)
+    monkeypatch.setattr(files, "warm", lambda hashes: None)  # no thumbnails made in tests
     return fake
 
 

@@ -55,7 +55,7 @@
           "catalog"
         ],
         "summary": "Browse",
-        "description": "120 per page, newest first; `ctx` in the answer is this list, for the viewer's previous/next.",
+        "description": "120 at a time, newest first; `next` in the answer continues the list, `ctx` is this list for the viewer's previous/next.",
         "operationId": "browse_api_browse_get",
         "parameters": [
           {
@@ -137,6 +137,18 @@
             "description": "OCR text search (boolean mode)"
           },
           {
+            "name": "sig",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "an image signal from meta.signals, e.g. product",
+              "default": "",
+              "title": "Sig"
+            },
+            "description": "an image signal from meta.signals, e.g. product"
+          },
+          {
             "name": "sort",
             "in": "query",
             "required": false,
@@ -152,15 +164,17 @@
             }
           },
           {
-            "name": "page",
+            "name": "after",
             "in": "query",
             "required": false,
             "schema": {
-              "type": "integer",
-              "minimum": 1,
-              "default": 1,
-              "title": "Page"
-            }
+              "type": "string",
+              "pattern": "^(|[0-9: -]*\\|[0-9a-f]{64})$",
+              "description": "`next` from the previous answer",
+              "default": "",
+              "title": "After"
+            },
+            "description": "`next` from the previous answer"
           }
         ],
         "responses": {
@@ -635,13 +649,17 @@
             "type": "integer",
             "title": "Total"
           },
-          "page": {
-            "type": "integer",
-            "title": "Page"
-          },
-          "pages": {
-            "type": "integer",
-            "title": "Pages"
+          "next": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next",
+            "description": "pass back as ?after= for the next 120; null at the end"
           },
           "ctx": {
             "type": "string",
@@ -653,8 +671,7 @@
         "required": [
           "items",
           "total",
-          "page",
-          "pages",
+          "next",
           "ctx"
         ],
         "title": "BrowsePage"
@@ -1046,6 +1063,25 @@
             },
             "type": "object",
             "title": "Class Counts"
+          },
+          "signals": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Signals",
+            "description": "image signals offered as Browse filters (?sig=), name -> label"
+          },
+          "signal_counts": {
+            "additionalProperties": {
+              "additionalProperties": {
+                "type": "integer"
+              },
+              "type": "object"
+            },
+            "type": "object",
+            "title": "Signal Counts",
+            "description": "signal -> class -> items; empty until counted (in the background)"
           }
         },
         "type": "object",
@@ -1054,7 +1090,9 @@
           "page_size",
           "subtypes",
           "status",
-          "class_counts"
+          "class_counts",
+          "signals",
+          "signal_counts"
         ],
         "title": "Meta"
       },

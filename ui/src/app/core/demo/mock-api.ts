@@ -26,10 +26,12 @@ function filtered(p: URLSearchParams): MockItem[] {
 }
 
 function browse(p: URLSearchParams) {
-  const all = filtered(p), page = Math.max(1, Number(p.get('page') || 1));
-  const ctx = new URLSearchParams([...p].filter(([k, v]) => k !== 'page' && v && v !== 'all'));
-  return { items: all.slice((page - 1) * PAGE, page * PAGE).map(tile), total: all.length, page,
-           pages: Math.max(1, Math.ceil(all.length / PAGE)), ctx: 'b:' + ctx.toString() };
+  const all = filtered(p), after = p.get('after')?.split('|')[1];
+  const start = after ? all.findIndex(i => i.hash === after) + 1 : 0;
+  const items = all.slice(start, start + PAGE), last = items[items.length - 1];
+  const ctx = new URLSearchParams([...p].filter(([k, v]) => k !== 'after' && v && v !== 'all'));
+  return { items: items.map(tile), total: all.length, next: start + PAGE < all.length && last ? last.taken + '|' + last.hash : null,
+           ctx: 'b:' + ctx.toString() };
 }
 
 function folders(prefix: string) {
@@ -92,7 +94,7 @@ export const mockApi: HttpInterceptorFn = (req, next) => {
   if (req.method === 'GET') {
     if (path === 'health') body = { ok: true, items: ITEMS.length, at: new Date().toISOString().slice(0, 19) };
     else if (path === 'meta') body = { classes: CLASSES, page_size: PAGE, subtypes: SUBTYPES, status: { label: 'status', values: [], hidden: [] },
-      class_counts: Object.fromEntries(CLASSES.map(c => [c, ITEMS.filter(i => i.class === c).length])) };
+      class_counts: Object.fromEntries(CLASSES.map(c => [c, ITEMS.filter(i => i.class === c).length])), signals: {}, signal_counts: {} };
     else if (path === 'browse') body = browse(p);
     else if (path === 'folders') body = folders(p.get('prefix') ?? '');
     else if (path === 'subtypes') body = subtypes(p);

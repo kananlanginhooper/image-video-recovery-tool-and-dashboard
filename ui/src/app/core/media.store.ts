@@ -9,7 +9,7 @@ export const VIEWS = [
 ];
 
 /** Browse filters (same query parameters as the API) */
-export type Filter = Partial<Record<'grp' | 'class' | 'status' | 'from' | 'to' | 'q' | 'folder' | 'sort', string>>;
+export type Filter = Partial<Record<'grp' | 'class' | 'status' | 'from' | 'to' | 'q' | 'folder' | 'sort' | 'sig', string>>;
 
 export interface SubtypeState { type: string; status: string; label: string; sample: number; }
 
@@ -37,7 +37,6 @@ export class MediaStore {
 
   readonly view = signal<string>(loadStr('view', 'browse'));
   readonly filter = signal<Filter>(load('filter', {}));
-  readonly page = signal(1);
   readonly folder = signal<string>(loadStr('folder', ''));
   readonly subtype = signal<SubtypeState>(load('subtype', { type: 'web_game_asset', status: 'match', label: '', sample: 0 }));
 
@@ -56,14 +55,14 @@ export class MediaStore {
     });
     // a list that reloads shows fresh answers, so earlier "✓ Yes" marks would only mislead
     effect(() => {
-      this.view(); this.filter(); this.page(); this.subtype();
+      this.view(); this.filter(); this.subtype();
       this.decisions.set({});
     });
   }
 
   /** open Browse with these filters (from Folders, Counts or an item's folder link) */
   browseWith(f: Filter) {
-    this.filter.set(f); this.page.set(1); this.item.set(null);
+    this.filter.set(f); this.item.set(null);
     this.router.navigate(['/browse']);
   }
 

@@ -6,6 +6,9 @@
   // this app's accent: the media library's green
   --app-accent: light-dark(#2f6f5e, #7cc4ae);
   --app-chip: var(--mat-sys-surface-container-high);
+  /* behind pictures: a grey checkerboard, so transparent or undecoded parts show as that instead of taking on the page's
+     own color (black in dark mode made cut-off images look black; a new tab shows them on white) */
+  --app-transparent: repeating-conic-gradient(#bdbdbd 0 25%, #e6e6e6 0 50%) 50% / 16px 16px;
 }
 
 a { color: var(--app-accent); text-decoration: none; cursor: pointer; }
@@ -46,7 +49,7 @@ button:not(.mat-mdc-button-base):not(.mdc-button):not(.mat-mdc-chip *) {
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: var(--app-space-2); }
 .rev { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: var(--app-space-3); }
 .cell { background: var(--app-card); border: 1px solid var(--app-line); border-radius: var(--app-radius-m); overflow: hidden; position: relative; }
-.cell img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; background: var(--app-chip); cursor: pointer; }
+.cell img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; background: var(--app-transparent); cursor: pointer; }
 .cap { padding: var(--app-space-1) var(--app-space-2); font: var(--app-text-xs); color: var(--app-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .badge { position: absolute; top: 5px; left: 5px; background: rgba(0, 0, 0, .65); color: #fff; font: var(--app-text-xs); padding: 1px 6px; border-radius: 4px; pointer-events: none; }
 .badge.r { left: auto; right: 5px; }
@@ -81,7 +84,13 @@ pre.ocr { white-space: pre-wrap; background: var(--app-card); border: 1px solid 
 .viewer-wrap { padding: var(--app-space-3) var(--app-space-4); }
 .navbar { display: flex; gap: var(--app-space-2); align-items: center; flex-wrap: wrap; margin: 0 0 var(--app-space-2); position: sticky; top: 0; background: var(--app-bg); padding: var(--app-space-1) 0; z-index: 1; }
 .viewer { position: relative; }
-.viewer img, .viewer video { width: 100%; height: calc(100vh - 130px); height: calc(100dvh - 130px); min-height: 320px; object-fit: contain; display: block; background: var(--app-chip); }
+.viewer video { width: 100%; height: calc(100vh - 130px); height: calc(100dvh - 130px); min-height: 320px; object-fit: contain; display: block; background: #000; }
+/* the picture at its own shape, as big as the window allows (--r = its width / height), so the checkerboard is only
+   behind the picture, never around it; small pictures are enlarged with square pixels rather than smoothed */
+.viewer { --vh: calc(100vh - 130px); --vh: calc(100dvh - 130px); }
+.viewer img { display: block; margin: 0 auto; max-width: 100%; max-height: var(--vh); background: var(--app-transparent); }
+.viewer img.sized { width: min(100%, var(--vh) * var(--r)); height: auto; aspect-ratio: var(--r); }
+.viewer img.small { image-rendering: pixelated; }
 
 /* long values (paths, hashes) wrap instead of widening the page */
 table.meta td:last-child { overflow-wrap: anywhere; }
@@ -105,7 +114,8 @@ table.meta td:last-child { overflow-wrap: anywhere; }
 @media (max-width: 599px) {
   header, main, .viewer-wrap { padding-left: max(var(--app-space-2), env(safe-area-inset-left)); padding-right: max(var(--app-space-2), env(safe-area-inset-right)); }
   table.compact { min-width: 0; }
-  .viewer img, .viewer video { height: calc(100dvh - 170px); min-height: 240px; }
+  .viewer video { height: calc(100dvh - 170px); min-height: 240px; }
+  .viewer { --vh: calc(100dvh - 170px); }
   .navbar .hint { display: none; }
 }
 

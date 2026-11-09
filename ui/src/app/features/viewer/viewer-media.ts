@@ -11,7 +11,7 @@ import type { Item } from '../../core/models';
     <div class="viewer" [class.blur]="hidden()" [attr.tabindex]="hidden() ? 0 : null" [attr.role]="hidden() ? 'button' : null"
          [attr.aria-label]="hidden() ? 'Reveal' : null" (click)="reveal()" (keydown.enter)="reveal()" (keydown.space)="reveal()">
       @if (item().grp === 'image') {
-        <img [src]="src('view/')" alt="">
+        <img [src]="src('view/')" alt="" [class.sized]="ratio()" [class.small]="small()" [style.--r]="ratio()">
       } @else if (item().playable) {
         <video [src]="src('file/')" controls preload="metadata" [poster]="src('thumb/')"></video>
       } @else {
@@ -23,6 +23,8 @@ export class ViewerMedia {
   protected readonly store = inject(MediaStore);
   readonly item = input.required<Item>();
   protected readonly hidden = computed(() => this.store.isHidden(this.item().hash, this.item().hidden));
+  protected readonly ratio = computed(() => { const { width: w, height: h } = this.item(); return w && h ? w / h : null; });
+  protected readonly small = computed(() => Math.max(this.item().width ?? 999, this.item().height ?? 999) < 400);
   protected src(kind: string) { return apiUrl(kind + this.item().hash); }
   protected reveal() { if (this.hidden()) this.store.reveal(this.item().hash); }
 }

@@ -22,7 +22,8 @@ export class MediaApi {
   private readonly http = inject(HttpClient);
 
   meta() { return httpResource<Meta>(() => '/api/meta'); }
-  browse(params: () => Params) { return httpResource<BrowsePage>(() => ({ url: '/api/browse', params: params() })); }
+  /** one batch of Browse (120); its `next` asks for the following batch as ?after= */
+  page(params: Params): Promise<BrowsePage> { return firstValueFrom(this.http.get<BrowsePage>('/api/browse', { params })); }
   folders(prefix: () => string) { return httpResource<FolderList>(() => ({ url: '/api/folders', params: { prefix: prefix() } })); }
   subtypes(params: () => Params) { return httpResource<SubtypePage>(() => ({ url: '/api/subtypes', params: params() })); }
   stats() { return httpResource<Stats>(() => '/api/stats'); }

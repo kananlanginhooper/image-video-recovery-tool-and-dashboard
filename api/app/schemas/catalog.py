@@ -23,8 +23,7 @@ class Tile(BaseModel):
 class BrowsePage(BaseModel):
     items: list[Tile]
     total: int
-    page: int
-    pages: int
+    next: str | None = Field(description="pass back as ?after= for the next 120; null at the end")
     ctx: str = Field(description="the list, for the viewer's previous/next (pass back as ?ctx=)")
 
 
@@ -53,6 +52,8 @@ class Meta(BaseModel):
     subtypes: dict[str, str]
     status: StatusInfo
     class_counts: dict[str, int]
+    signals: dict[str, str] = Field(description="image signals offered as Browse filters (?sig=), name -> label")
+    signal_counts: dict[str, dict[str, int]] = Field(description="signal -> class -> items; empty until counted (in the background)")
 
 
 class Copy(BaseModel):

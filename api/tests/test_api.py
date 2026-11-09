@@ -16,10 +16,10 @@ def test_config_and_frame_policy(client):
 
 
 def test_browse_shape_and_ctx(client):
-    r = client.get("/api/browse", params={"class": "camera", "page": 1})
+    r = client.get("/api/browse", params={"class": "camera"})
     assert r.status_code == 200
     d = r.json()
-    assert d["total"] == 1 and d["pages"] == 1 and d["ctx"] == "b:class=camera"
+    assert d["total"] == 1 and d["next"] is None and d["ctx"] == "b:class=camera"
     assert d["items"][0] == {
         "hash": H,
         "grp": "image",
@@ -38,6 +38,27 @@ def test_item(client):
     assert (d["prev"], d["next"]) == (None, None)
 
 
+def test_browse_continues_after_a_cursor_without_offset(client, db):
+    client.get("/api/browse", params={"after": f"2024-05-01 12:00:00|{H}"})
+    steps = [s for s in db.sql if s.startswith("SELECT b.hash")]
+    assert "b.taken=%s AND b.hash<%s" in steps[0] and "b.taken<%s" in steps[1]
+    assert not any("OFFSET" in s or "COALESCE(b.taken" in s for s in db.sql)
+
+
+def test_item_neighbours_walk_the_taken_index(client, db):
+    d = client.get(f"/api/item/{H}", params={"ctx": "b:class=camera"}).json()
+    assert (d["prev"], d["next"]) == (None, None)
+    steps = [s for s in db.sql if s.startswith("SELECT b.hash")]
+    assert any("b.taken>%s" in s for s in steps) and any("b.taken<%s" in s for s in steps)
+    assert not any("COALESCE(b.taken" in s for s in db.sql)
+
+
+def test_signal_filter(client, db):
+    client.get("/api/browse", params={"sig": "product"})
+    assert any("image_signals s WHERE s.hash=b.hash AND s.product>=0.75" in s for s in db.sql)
+    assert set(client.get("/api/meta").json()["signals"]) == {"product", "faces", "damaged", "transparent", "blank"}
+
+
 def test_unknown_item_is_404(client):
     assert client.get("/api/item/" + "b" * 64).status_code == 404
 
@@ -48,7 +69,7 @@ def test_unknown_api_path_is_404(client):
 
 @pytest.mark.parametrize(
     "params",
-    [{"grp": "audio"}, {"sort": "random"}, {"page": 0}, {"page": "x"}],
+    [{"grp": "audio"}, {"sort": "random"}, {"after": "x"}, {"after": "2024-05-01 12:00:00|nothex"}],
 )
 def test_bad_browse_params_are_422(client, params):
     assert client.get("/api/browse", params=params).status_code == 422
@@ -88,7 +109,8 @@ def test_plugin_status_hides_items_and_joins_its_table(plugin_client, db):
     tile = plugin_client.get("/api/browse", params={"status": "flagged"}).json()["items"][0]
     assert (tile["st"], tile["hidden"]) == ("flagged", True)
     # the filter and the count both go through the plugin's join
-    assert sum("LEFT JOIN scan s ON s.hash=b.hash" in s and "'flagged'=%s" in s for s in db.sql) == 2
+    joined = [s for s in db.sql if "LEFT JOIN scan s ON s.hash=b.hash" in s and "'flagged'=%s" in s]
+    assert any(s.startswith("SELECT b.hash") for s in joined) and any("COUNT(*)" in s for s in joined)
 
     d = plugin_client.get(f"/api/item/{H}").json()
     assert (d["st"], d["hidden"]) == ("flagged", True)
