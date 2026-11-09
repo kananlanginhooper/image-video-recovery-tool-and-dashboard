@@ -75,8 +75,11 @@ cd ui && npm run lint
 | Group | Routes |
 |---|---|
 | Config (GET) | `/api/config`: the UI's runtime config |
-| Lists (GET) | `/api/meta`<br>`/api/browse?grp&class&status&from&to&q&folder&sort&page`<br>`/api/folders?prefix`<br>`/api/subtypes?type&status&label&sample`<br>`/api/stats` |
+| Lists (GET) | `/api/meta`<br>`/api/browse?grp&class&status&from&to&q&folder&sig&sort&after` (`next` in the answer is the next `after`)<br>`/api/browse/count` (same filters)<br>`/api/folders?prefix`<br>`/api/subtypes?type&status&label&sample`<br>`/api/stats` |
 | One item (GET) | `/api/item/{hash}?ctx` (`ctx` is the list it was opened from, for previous/next) |
 | Media (GET) | `/api/thumb/{hash}`<br>`/api/view/{hash}`<br>`/api/file/{hash}` (supports Range, so videos seek)<br>`/api/frame/{hash}/{seconds}` |
 | Answers (POST, JSON body) | `/api/subtype/{hash}/{subtype}` `{verdict: match/no}` |
 | Health | `/api/health` |
+
+---
+Built by [Kanan Hooper](https://github.com/kananlanginhooper)

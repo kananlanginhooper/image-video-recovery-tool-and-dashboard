@@ -16,6 +16,7 @@ a:hover { text-decoration: underline; }
 a.b { font-weight: 700; }
 .muted { color: var(--app-muted); }
 .warn { color: var(--app-bad); }
+.credit { padding: var(--app-space-4); font: var(--app-text-sm); text-align: center; }
 h3 { font: var(--app-text-lg); margin: var(--app-space-4) 0 var(--app-space-2); }
 
 /* header + page */

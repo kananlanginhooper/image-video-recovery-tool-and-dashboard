@@ -24,6 +24,7 @@ import { Viewer } from './features/viewer/viewer';
       </nav>
     </header>
     <mat-tab-nav-panel #panel><main><router-outlet /></main></mat-tab-nav-panel>
+    <footer class="credit muted">Built by <a href="https://github.com/kananlanginhooper" target="_blank" rel="noopener">Kanan Hooper</a></footer>
     @if (store.item()) { <media-viewer /> }
     @for (o of overlays; track $index) { <ng-container *ngComponentOutlet="o" /> }`,
 })
